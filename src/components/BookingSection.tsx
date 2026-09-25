@@ -161,7 +161,7 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
   };
 
   return (
-    <section id="booking" className="py-24 bg-[#0A0A0A] relative">
+    <section id="booking" className="py-24 bg-black/50 backdrop-blur-[2px] relative border-t border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Header */}

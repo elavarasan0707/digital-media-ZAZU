@@ -16,7 +16,6 @@ export const Footer: React.FC<FooterProps> = ({ agencyConfig }) => {
     { label: 'Why ZAZU', href: '#why-us' },
     { label: 'Services', href: '#services' },
     { label: '6-Step Process', href: '#process' },
-    { label: 'Works & Case Studies', href: '#works' },
     { label: 'Client Reviews', href: '#reviews' },
     { label: 'Contact', href: '#contact' }
   ];
@@ -45,7 +44,7 @@ export const Footer: React.FC<FooterProps> = ({ agencyConfig }) => {
   const footerWaUrl = `https://wa.me/${footerWaNumber}?text=${encodeURIComponent('Hi Vijayakumar, I am contacting you from the ZAZU Digital Media website.')}`;
 
   return (
-    <footer className="bg-[#050505] border-t border-[#1C1C1C] text-white pt-16 pb-12 relative overflow-hidden">
+    <footer className="bg-black/85 backdrop-blur-[4px] border-t border-[#1C1C1C] text-white pt-16 pb-12 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Main 3-Column Grid */}

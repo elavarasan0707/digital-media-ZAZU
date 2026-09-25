@@ -17,7 +17,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
   const activeReviews = reviewsList && reviewsList.length > 0 ? reviewsList : defaultTestimonials;
 
   return (
-    <section id="reviews" className="py-24 bg-[#080808] relative overflow-hidden border-t border-white/5">
+    <section id="reviews" className="py-24 bg-black/45 backdrop-blur-[2px] relative overflow-hidden border-t border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Header */}
@@ -60,7 +60,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
           {activeReviews.map((item) => (
             <div
               key={item.id}
-              className="relative rounded-2xl bg-[#111111] border border-[#222222] hover:border-[#F5C542]/40 transition-all duration-300 p-6 flex flex-col justify-between group shadow-xl"
+              className="relative rounded-2xl bg-[#111111] border border-[#222222] hover:border-[#F5C542] card-pop-hover p-6 flex flex-col justify-between group shadow-xl hover:shadow-[0_12px_35px_rgba(245,197,66,0.2)]"
             >
               {/* Quote Mark Watermark */}
               <div className="absolute top-4 right-4 text-white/5 group-hover:text-[#F5C542]/10 transition-colors pointer-events-none">

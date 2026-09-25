@@ -9,14 +9,7 @@ interface HeroProps {
 
 export const Hero: React.FC<HeroProps> = ({ onBookConsultation, onExploreServices }) => {
   return (
-    <section id="hero" className="relative min-h-[92vh] flex items-center justify-center pt-28 pb-16 overflow-hidden bg-[#080808]">
-      {/* Interactive 3D Canvas Background */}
-      <Hero3DCanvas />
-
-      {/* Subtle Radial Glow Mask */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(245,197,66,0.12),transparent_70%)] pointer-events-none" />
-      <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#080808] to-transparent pointer-events-none" />
-
+    <section id="hero" className="relative min-h-[92vh] flex items-center justify-center pt-28 pb-16 overflow-hidden bg-transparent">
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
@@ -48,7 +41,7 @@ export const Hero: React.FC<HeroProps> = ({ onBookConsultation, onExploreService
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
               <button
                 onClick={onBookConsultation}
-                className="group relative inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-xs bg-gradient-to-r from-[#F5C542] via-[#FFD966] to-[#F5C542] text-[#080808] shadow-[0_0_20px_rgba(245,197,66,0.3)] hover:shadow-[0_0_25px_rgba(245,197,66,0.45)] transition-all duration-300 hover:scale-[1.01] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD966]"
+                className="group relative inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-xs bg-gradient-to-r from-[#F5C542] via-[#FFD966] to-[#F5C542] text-[#080808] shadow-[0_0_20px_rgba(245,197,66,0.3)] hover:shadow-[0_0_25px_rgba(245,197,66,0.5)] btn-pop cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD966]"
               >
                 <span>BOOK A FREE CONSULTATION</span>
                 <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -56,23 +49,10 @@ export const Hero: React.FC<HeroProps> = ({ onBookConsultation, onExploreService
 
               <button
                 onClick={onExploreServices}
-                className="inline-flex items-center justify-center px-5 py-3 rounded-xl font-semibold text-xs border border-[#333333] hover:border-[#F5C542]/60 text-white hover:text-[#FFD966] bg-[#111111]/80 hover:bg-[#151515] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F5C542]"
+                className="inline-flex items-center justify-center px-5 py-3 rounded-xl font-semibold text-xs border border-[#333333] hover:border-[#F5C542] text-white hover:text-[#FFD966] bg-[#111111]/80 hover:bg-[#151515] btn-pop cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F5C542]"
               >
                 EXPLORE OUR SERVICES
               </button>
-            </div>
-
-            {/* 4 Pillars Strip */}
-            <div className="pt-4 border-t border-white/10">
-              <div className="flex flex-wrap items-center gap-y-1.5 text-xs font-semibold tracking-wider text-[#A0A0A0]">
-                <span className="text-white hover:text-[#F5C542] transition-colors">STRATEGY</span>
-                <span className="mx-2.5 text-[#F5C542]" aria-hidden="true">•</span>
-                <span className="text-white hover:text-[#F5C542] transition-colors">CREATIVITY</span>
-                <span className="mx-2.5 text-[#F5C542]" aria-hidden="true">•</span>
-                <span className="text-white hover:text-[#F5C542] transition-colors">TECHNOLOGY</span>
-                <span className="mx-2.5 text-[#F5C542]" aria-hidden="true">•</span>
-                <span className="text-[#FFD966] hover:text-white transition-colors">RESULTS</span>
-              </div>
             </div>
           </div>
 

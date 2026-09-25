@@ -53,7 +53,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
   const activeServices = servicesList && servicesList.length > 0 ? servicesList : servicesData;
 
   return (
-    <section id="services" className="py-24 bg-[#0A0A0A] relative">
+    <section id="services" className="py-24 bg-black/45 backdrop-blur-[2px] relative border-t border-white/5">
       {/* Background Accent */}
       <div className="absolute top-0 right-1/4 w-80 h-80 bg-[#F5C542]/5 rounded-full blur-[140px] pointer-events-none" />
 
@@ -92,7 +92,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
               <div
                 key={service.id}
                 onClick={() => setActiveModalService(service)}
-                className="group relative rounded-2xl overflow-hidden bg-[#111111] border border-[#222222] hover:border-[#F5C542]/60 hover:bg-[#141414] transition-all duration-300 hover:-translate-y-1 cursor-pointer shadow-lg hover:shadow-[0_0_25px_rgba(245,197,66,0.15)] flex flex-col justify-between"
+                className="group relative rounded-2xl overflow-hidden bg-[#111111] border border-[#222222] hover:border-[#F5C542] hover:bg-[#141414] card-pop-hover cursor-pointer shadow-lg hover:shadow-[0_12px_35px_rgba(245,197,66,0.25)] flex flex-col justify-between"
               >
                 {/* Glow corner indicator */}
                 <div className="absolute top-0 right-0 w-14 h-14 bg-gradient-to-bl from-[#F5C542]/10 to-transparent rounded-tr-2xl opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none" />

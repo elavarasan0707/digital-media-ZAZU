@@ -6,7 +6,7 @@ const icons = [Cpu, Zap, BarChart3, MessageSquare, ShieldCheck];
 
 export const WhyChooseUs: React.FC = () => {
   return (
-    <section id="why-us" className="py-24 bg-[#080808] relative overflow-hidden">
+    <section id="why-us" className="py-24 bg-black/50 backdrop-blur-[2px] relative overflow-hidden border-t border-white/5">
       {/* Background Lighting */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-full max-w-4xl h-72 bg-[#F5C542]/5 rounded-full blur-[140px] pointer-events-none" />
 
@@ -44,7 +44,7 @@ export const WhyChooseUs: React.FC = () => {
               return (
                 <div
                   key={item.number}
-                  className="group relative rounded-xl p-5 bg-[#111111] border border-[#222222] hover:border-[#F5C542]/50 hover:bg-[#141414] transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between shadow-xl"
+                  className="group relative rounded-xl p-5 bg-[#111111] border border-[#222222] hover:border-[#F5C542] hover:bg-[#141414] card-pop-hover flex flex-col justify-between shadow-xl hover:shadow-[0_10px_30px_rgba(245,197,66,0.2)]"
                 >
                   {/* Step Node Marker */}
                   <div className="flex items-center justify-between mb-4">

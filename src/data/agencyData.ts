@@ -4,6 +4,15 @@ import caseStudyBranding from '../assets/images/case_study_branding_179025601177
 import zazuHeroAbstract from '../assets/images/zazu_hero_abstract_1790255957518.jpg';
 import zazuEmblem3D from '../assets/images/zazu_emblem_3d_1790255979167.jpg';
 
+import serviceDigitalMarketingImg from '../assets/images/service_digital_marketing_1790347832195.jpg';
+import serviceSocialMediaImg from '../assets/images/service_social_media_1790347849895.jpg';
+import serviceSeoImg from '../assets/images/service_seo_search_1790347870010.jpg';
+import serviceGoogleAdsImg from '../assets/images/service_google_ads_1790347884752.jpg';
+import serviceContentImg from '../assets/images/service_content_create_1790347900144.jpg';
+import serviceBrandImg from '../assets/images/service_brand_id_1790347944509.jpg';
+import serviceVideoImg from '../assets/images/service_video_edit_1790347916003.jpg';
+import serviceWebCroImg from '../assets/images/service_web_cro_1790347930956.jpg';
+
 export const initialAgencyConfig: AgencyContactConfig = {
   email: 'digitalmediazazu@gmail.com',
   phone: '+91 9789504702',
@@ -41,7 +50,7 @@ export const servicesData: ServiceItem[] = [
     iconName: 'Compass',
     deliverables: ['Full-Funnel Strategy', 'Omnichannel Media Planning', 'Growth Auditing', 'Multi-Touch Attribution Setup'],
     metricsSample: 'Integrated Cross-Channel Campaign Architecture',
-    image: caseStudyAnalytics
+    image: serviceDigitalMarketingImg
   },
   {
     id: 'social-media-marketing',
@@ -51,7 +60,7 @@ export const servicesData: ServiceItem[] = [
     iconName: 'Share2',
     deliverables: ['Editorial Calendar Production', 'Community Engagement Protocols', 'Influencer Collaboration', 'Performance Paid Amplification'],
     metricsSample: 'High-Retention Organic & Paid Social Reach',
-    image: zazuHeroAbstract
+    image: serviceSocialMediaImg
   },
   {
     id: 'seo',
@@ -61,7 +70,7 @@ export const servicesData: ServiceItem[] = [
     iconName: 'Search',
     deliverables: ['Technical SEO Audits & Core Web Vitals', 'Semantic Entity Architecture', 'High-Authority Backlink Acquisition', 'Local & National SERP Dominance'],
     metricsSample: 'Sustainable Inbound Commercial Organic Traffic',
-    image: caseStudyAnalytics
+    image: serviceSeoImg
   },
   {
     id: 'google-ads',
@@ -71,7 +80,7 @@ export const servicesData: ServiceItem[] = [
     iconName: 'Target',
     deliverables: ['High-Intent Search Campaigns', 'Performance Max (PMax) Optimization', 'Negative Keyword Sculpting', 'Bidding Algorithm Optimization'],
     metricsSample: 'Optimized Target Cost Per Acquisition (tCPA)',
-    image: caseStudyAnalytics
+    image: serviceGoogleAdsImg
   },
   {
     id: 'content-creation',
@@ -81,7 +90,7 @@ export const servicesData: ServiceItem[] = [
     iconName: 'Sparkles',
     deliverables: ['Short-Form Vertical Video (Reels/TikTok/Shorts)', 'High-End Product Photography Mockups', 'Direct-Response Ad Copywriting', 'Visual Storyboards'],
     metricsSample: 'High-Engagement Digital Asset Suite',
-    image: zazuEmblem3D
+    image: serviceContentImg
   },
   {
     id: 'branding',
@@ -91,7 +100,7 @@ export const servicesData: ServiceItem[] = [
     iconName: 'Crown',
     deliverables: ['Brand Positioning & Narrative', 'Complete Design Systems & Styleguides', 'Typography & Palette Direction', 'Corporate Collateral & Asset Kits'],
     metricsSample: 'Cohesive Luxury Brand Equity',
-    image: caseStudyBranding
+    image: serviceBrandImg
   },
   {
     id: 'video-marketing',
@@ -101,7 +110,7 @@ export const servicesData: ServiceItem[] = [
     iconName: 'Video',
     deliverables: ['Direct-Response Video Ad Hooks', 'Brand Documentaries & Stories', 'Motion Graphics & 3D Title Sequences', 'Multi-Platform Video Resizing'],
     metricsSample: 'Elevated Video Hook-Rate & Watch-Time',
-    image: zazuHeroAbstract
+    image: serviceVideoImg
   },
   {
     id: 'website-marketing',
@@ -111,7 +120,7 @@ export const servicesData: ServiceItem[] = [
     iconName: 'Layout',
     deliverables: ['Conversion Architecture & Wireframing', 'A/B Split Testing & Heatmap Analysis', 'Copywriting Optimized for Speed & Conversion', 'Page Speed & Core Web Vitals Optimization'],
     metricsSample: 'Lifted Session-to-Lead Conversion Rate',
-    image: caseStudyBranding
+    image: serviceWebCroImg
   }
 ];
 

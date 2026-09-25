@@ -6,7 +6,7 @@ export const ProcessSection: React.FC = () => {
   const [activeStepIndex, setActiveStepIndex] = useState(0);
 
   return (
-    <section id="process" className="py-24 bg-[#0A0A0A] relative overflow-hidden">
+    <section id="process" className="py-24 bg-black/50 backdrop-blur-[2px] relative overflow-hidden border-t border-white/5">
       {/* Glow */}
       <div className="absolute top-1/2 right-10 w-96 h-96 bg-[#F5C542]/5 rounded-full blur-[140px] pointer-events-none" />
 

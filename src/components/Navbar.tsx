@@ -35,7 +35,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     { label: 'Why ZAZU', href: '#why-us' },
     { label: 'Services', href: '#services' },
     { label: 'Process', href: '#process' },
-    { label: 'Works', href: '#works' },
     { label: 'Reviews', href: '#reviews' },
     { label: 'Contact', href: '#contact' }
   ];

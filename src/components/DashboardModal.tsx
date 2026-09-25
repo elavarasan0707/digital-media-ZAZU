@@ -404,7 +404,6 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
     { id: 'why-zazu', label: 'Why ZAZU', icon: HelpCircle },
     { id: 'services', label: 'Services', icon: Briefcase },
     { id: 'process', label: 'Process', icon: Layers },
-    { id: 'works', label: 'Works', icon: FolderGit2 },
     { id: 'reviews', label: 'Reviews', icon: Star },
     { id: 'bookings', label: 'Bookings', icon: Calendar },
     { id: 'contact', label: 'Contact', icon: Mail }
@@ -1623,6 +1622,40 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                   </div>
                 </div>
 
+                {/* External Calendar Direct Connect Card */}
+                <div className="p-4 rounded-xl bg-gradient-to-r from-black/80 to-[#111111] border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <ExternalLink className="w-4 h-4 text-[#F5C542]" />
+                      <span>Live External Calendar URL (Calendly / Google Calendar)</span>
+                    </span>
+                    <p className="text-[11px] text-[#A0A0A0]">
+                      Current link: <code className="text-[#FFD966] bg-black/60 px-1.5 py-0.5 rounded">{siteConfig?.bookingUrl || 'Not set'}</code>
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {siteConfig?.bookingUrl && (
+                      <a
+                        href={siteConfig.bookingUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[#FFD966] text-xs font-mono flex items-center gap-1"
+                      >
+                        <span>Open Live</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                    <button
+                      onClick={() => setActiveTab('contact')}
+                      className="px-3 py-1.5 rounded-lg bg-[#F5C542] hover:bg-[#FFD966] text-[#080808] font-bold text-xs flex items-center gap-1"
+                    >
+                      <Edit className="w-3 h-3" />
+                      <span>Change Calendar Link</span>
+                    </button>
+                  </div>
+                </div>
+
                 {bookingsList.length === 0 ? (
                   <div className="p-10 rounded-2xl bg-[#111111] border border-white/5 text-center space-y-3">
                     <div className="w-12 h-12 rounded-full bg-[#F5C542]/10 border border-[#F5C542]/30 flex items-center justify-center text-[#F5C542] mx-auto">
@@ -1778,6 +1811,41 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                         className="w-full p-2.5 bg-black border border-white/10 rounded-lg text-white"
                       />
                     </div>
+                  </div>
+
+                  {/* External Calendar Booking Link */}
+                  <div className="text-xs pt-1">
+                    <label className="block text-[11px] text-[#A0A0A0] mb-1 font-semibold flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-white">
+                        <span>External Calendar Link (Calendly, Google Calendar, SavvyCal)</span>
+                      </span>
+                      <span className="text-[#FFD966] text-[10px] font-mono">Controls "External Calendar Link ↗" on site</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        disabled={!isAdmin}
+                        placeholder="https://calendly.com/your-username/30min"
+                        value={siteConfig?.bookingUrl || ''}
+                        onChange={(e) => siteConfig && setSiteConfig({ ...siteConfig, bookingUrl: e.target.value })}
+                        className="w-full p-2.5 bg-black border border-white/10 rounded-lg text-white font-mono text-xs focus:border-[#F5C542]"
+                      />
+                      {siteConfig?.bookingUrl && (
+                        <a
+                          href={siteConfig.bookingUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 text-[#FFD966] text-xs font-mono flex items-center gap-1 shrink-0"
+                          title="Test open your calendar link"
+                        >
+                          <span>Test</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-[#777777] mt-1">
+                      Paste your personal Calendly, Cal.com or Google Calendar appointment scheduling link here. When visitors click "External Calendar Link" on the website, this link will open immediately in a new tab.
+                    </p>
                   </div>
                 </form>
 

@@ -11,12 +11,13 @@ import { AboutSection } from './components/AboutSection';
 import { WhyChooseUs } from './components/WhyChooseUs';
 import { ServicesSection } from './components/ServicesSection';
 import { ProcessSection } from './components/ProcessSection';
-import { PortfolioSection } from './components/PortfolioSection';
 import { TestimonialsSection } from './components/TestimonialsSection';
 import { BookingSection } from './components/BookingSection';
 import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
+import { GlobalMarketingBackground } from './components/GlobalMarketingBackground';
+import { ScrollReveal } from './components/ScrollReveal';
 import { DashboardModal } from './components/DashboardModal';
 import { AuthModal } from './components/AuthModal';
 import { QuoteModal } from './components/QuoteModal';
@@ -78,69 +79,81 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080808] text-white selection:bg-[#F5C542]/30 selection:text-[#FFD966] font-sans antialiased overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#080808] text-white selection:bg-[#F5C542]/30 selection:text-[#FFD966] font-sans antialiased overflow-x-hidden">
       
-      {/* 1. Header Navigation */}
-      <Navbar
-        agencyConfig={agencyConfig}
-        onOpenBooking={() => scrollToSection('booking')}
-        onOpenQuote={() => setIsQuoteModalOpen(true)}
-        onOpenDashboard={handleOpenDashboard}
-      />
+      {/* 0. Global 3D Marketing Ambient Background (Fixed full wallpaper matching reference image) */}
+      <GlobalMarketingBackground />
 
-      {/* 2. Hero Section */}
-      <Hero
-        onBookConsultation={() => scrollToSection('booking')}
-        onExploreServices={() => scrollToSection('services')}
-      />
+      <div className="relative z-10">
+        {/* 1. Header Navigation */}
+        <Navbar
+          agencyConfig={agencyConfig}
+          onOpenBooking={() => scrollToSection('booking')}
+          onOpenQuote={() => setIsQuoteModalOpen(true)}
+          onOpenDashboard={handleOpenDashboard}
+        />
 
-      {/* 3. About Section (About Vijayakumar) */}
-      <AboutSection
-        agencyConfig={agencyConfig}
-        onOpenBooking={() => scrollToSection('booking')}
-      />
+        {/* 2. Hero Section */}
+        <Hero
+          onBookConsultation={() => scrollToSection('booking')}
+          onExploreServices={() => scrollToSection('services')}
+        />
 
-      {/* 4. Why Choose ZAZU */}
-      <WhyChooseUs />
+        {/* 3. About Section (About Vijayakumar) with Scroll Reveal */}
+        <ScrollReveal direction="up" delay={50}>
+          <AboutSection
+            agencyConfig={agencyConfig}
+            onOpenBooking={() => scrollToSection('booking')}
+          />
+        </ScrollReveal>
 
-      {/* 5. Services Section */}
-      <ServicesSection
-        servicesList={servicesList}
-        onSelectServiceForInquiry={handleSelectServiceForInquiry}
-      />
+        {/* 4. Why Choose ZAZU with Scroll Reveal */}
+        <ScrollReveal direction="pop" delay={100}>
+          <WhyChooseUs />
+        </ScrollReveal>
 
-      {/* 6. Execution Process */}
-      <ProcessSection />
+        {/* 5. Services Section with Scroll Reveal */}
+        <ScrollReveal direction="up" delay={50}>
+          <ServicesSection
+            servicesList={servicesList}
+            onSelectServiceForInquiry={handleSelectServiceForInquiry}
+          />
+        </ScrollReveal>
 
-      {/* 7. Works Section (Renamed from Portfolio) */}
-      <PortfolioSection
-        worksList={worksList}
-        onRequestSimilarProject={handleSelectServiceForInquiry}
-        onOpenDashboard={handleOpenDashboard}
-      />
+        {/* 6. Execution Process with Scroll Reveal */}
+        <ScrollReveal direction="pop" delay={50}>
+          <ProcessSection />
+        </ScrollReveal>
 
-      {/* 8. Client Reviews (Renamed from Testimonials) */}
-      <TestimonialsSection
-        reviewsList={reviewsList}
-        onOpenDashboard={handleOpenDashboard}
-      />
+        {/* 7. Client Reviews with Scroll Reveal */}
+        <ScrollReveal direction="up" delay={50}>
+          <TestimonialsSection
+            reviewsList={reviewsList}
+            onOpenDashboard={handleOpenDashboard}
+          />
+        </ScrollReveal>
 
-      {/* 9. Consultation Booking */}
-      <BookingSection key={dataVersion} agencyConfig={agencyConfig} />
+        {/* 8. Consultation Booking with Scroll Reveal */}
+        <ScrollReveal direction="pop" delay={50}>
+          <BookingSection key={dataVersion} agencyConfig={agencyConfig} />
+        </ScrollReveal>
 
-      {/* 10. Contact Section & Direct Messaging to 9789504702 */}
-      <ContactSection
-        agencyConfig={agencyConfig}
-        selectedServicePreload={preloadedService}
-        onOpenDashboard={() => handleOpenDashboard('contact')}
-      />
+        {/* 9. Contact Section with Scroll Reveal */}
+        <ScrollReveal direction="up" delay={50}>
+          <ContactSection
+            agencyConfig={agencyConfig}
+            selectedServicePreload={preloadedService}
+            onOpenDashboard={() => handleOpenDashboard('contact')}
+          />
+        </ScrollReveal>
 
-      {/* 11. Footer */}
-      <Footer
-        agencyConfig={agencyConfig}
-        onOpenBooking={() => scrollToSection('booking')}
-        onOpenQuote={() => setIsQuoteModalOpen(true)}
-      />
+        {/* 10. Footer */}
+        <Footer
+          agencyConfig={agencyConfig}
+          onOpenBooking={() => scrollToSection('booking')}
+          onOpenQuote={() => setIsQuoteModalOpen(true)}
+        />
+      </div>
 
       {/* Floating WhatsApp Quick-Chat (Routes to 9789504702) */}
       <FloatingWhatsApp agencyConfig={agencyConfig} />

@@ -125,7 +125,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
   };
 
   return (
-    <section id="contact" className="py-24 bg-[#080808] relative overflow-hidden border-t border-white/5">
+    <section id="contact" className="py-24 bg-black/55 backdrop-blur-[2px] relative overflow-hidden border-t border-white/5">
       {/* Ambient Lighting */}
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#F5C542]/5 rounded-full blur-[160px] pointer-events-none" />
 

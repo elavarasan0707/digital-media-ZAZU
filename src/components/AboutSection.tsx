@@ -36,7 +36,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ agencyConfig, onOpen
   const linkedinUrl = agencyConfig?.linkedin || 'https://www.linkedin.com/in/vijayakumar-s-2a48a8394/';
 
   return (
-    <section id="about" className="py-24 bg-[#080808] relative overflow-hidden border-t border-white/5">
+    <section id="about" className="py-24 bg-black/40 backdrop-blur-[2px] relative overflow-hidden border-t border-white/5">
       {/* Subtle Background Glow */}
       <div className="absolute top-1/3 left-0 w-96 h-96 bg-[#F5C542]/5 rounded-full blur-[140px] pointer-events-none" />
 
@@ -80,7 +80,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ agencyConfig, onOpen
                       Vijayakumar S
                     </h3>
                     <span className="text-xs text-[#FFD966] font-medium mt-1 block">
-                      Creative Professional & Digital Strategist
+                      Founder & Zazu Digital Media
                     </span>
                   </div>
                 </div>
