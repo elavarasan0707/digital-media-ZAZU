@@ -1,0 +1,6 @@
+{
+  "name": "ZAZU Digital Media",
+  "description": "ZAZU Digital Media helps businesses grow online through digital marketing, SEO, social media marketing, Google Ads, content creation, branding and digital growth.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

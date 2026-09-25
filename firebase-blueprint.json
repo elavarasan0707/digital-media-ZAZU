@@ -1,0 +1,125 @@
+{
+  "entities": {
+    "siteConfig": {
+      "title": "Site Configuration",
+      "description": "ZAZU Digital Media agency contact and profile settings",
+      "type": "object",
+      "properties": {
+        "agencyName": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "location": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "instagram": { "type": "string" },
+        "linkedin": { "type": "string" },
+        "aboutVijayakumar": { "type": "string" }
+      },
+      "required": ["agencyName", "phone", "email"]
+    },
+    "work": {
+      "title": "Work Item",
+      "description": "Portfolio work and case studies showcase",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "clientType": { "type": "string" },
+        "challenge": { "type": "string" },
+        "solution": { "type": "string" },
+        "deliverables": { "type": "array" },
+        "metrics": { "type": "array" },
+        "budget": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "category", "solution"]
+    },
+    "review": {
+      "title": "Client Review",
+      "description": "Client testimonials and reviews",
+      "type": "object",
+      "properties": {
+        "clientName": { "type": "string" },
+        "role": { "type": "string" },
+        "company": { "type": "string" },
+        "rating": { "type": "number" },
+        "reviewText": { "type": "string" },
+        "projectType": { "type": "string" },
+        "resultHighlight": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["clientName", "reviewText", "rating"]
+    },
+    "service": {
+      "title": "Service Discipline",
+      "description": "Offered agency services and deliverables",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "tagline": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "priceRange": { "type": "string" },
+        "metrics": { "type": "string" }
+      },
+      "required": ["title", "description"]
+    },
+    "inquiry": {
+      "title": "Client Inquiry",
+      "description": "Contact form submissions and project inquiries",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "service": { "type": "string" },
+        "budget": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "email", "message"]
+    },
+    "booking": {
+      "title": "Consultation Booking",
+      "description": "Reserved 30-minute consultation slots",
+      "type": "object",
+      "properties": {
+        "slotKey": { "type": "string" },
+        "dateLabel": { "type": "string" },
+        "time": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "topic": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["slotKey", "dateLabel", "time", "name", "email"]
+    }
+  },
+  "firestore": {
+    "/site_config/{configId}": {
+      "schema": "siteConfig",
+      "description": "Agency settings and contact info"
+    },
+    "/works/{workId}": {
+      "schema": "work",
+      "description": "Case studies and portfolio items"
+    },
+    "/reviews/{reviewId}": {
+      "schema": "review",
+      "description": "Client testimonials and reviews"
+    },
+    "/services/{serviceId}": {
+      "schema": "service",
+      "description": "Agency service offerings"
+    },
+    "/inquiries/{inquiryId}": {
+      "schema": "inquiry",
+      "description": "Client contact submissions and quotes"
+    },
+    "/bookings/{bookingId}": {
+      "schema": "booking",
+      "description": "Reserved consultation appointments"
+    }
+  }
+}
