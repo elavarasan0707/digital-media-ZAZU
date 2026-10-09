@@ -58,7 +58,8 @@ import {
   PhoneCall,
   Sparkles,
   Send,
-  FileSpreadsheet
+  FileSpreadsheet,
+  LogOut
 } from 'lucide-react';
 
 interface DashboardModalProps {
@@ -76,7 +77,7 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
   initialTab = 'home',
   onDataChange
 }) => {
-  const { user, isAdmin, openAuthModal } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>((initialTab as TabType) || 'home');
 
   // State data
@@ -116,17 +117,10 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
       setServices(s);
       setBookingsList(b);
 
-      if (isAdmin) {
-        try {
-          const inq = await fetchClientInquiries(user?.email);
-          setInquiries(inq);
-        } catch {
-          try {
-            const local = localStorage.getItem('zazu_inquiries_cache');
-            if (local) setInquiries(JSON.parse(local));
-          } catch {}
-        }
-      } else {
+      try {
+        const inq = await fetchClientInquiries(user?.email);
+        setInquiries(inq);
+      } catch {
         try {
           const local = localStorage.getItem('zazu_inquiries_cache');
           if (local) setInquiries(JSON.parse(local));
@@ -140,12 +134,12 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
   };
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && isAdmin) {
       loadAllData();
     }
   }, [isOpen, isAdmin]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !isAdmin) return null;
 
   const showFeedback = (type: 'success' | 'error', text: string) => {
     setStatusMsg({ type, text });
@@ -155,16 +149,15 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
   // Handlers for Work
   const handleSaveWork = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAdmin) {
-      showFeedback('error', 'Only digitalmediazazu@gmail.com can add or edit works.');
-      return;
-    }
     if (!editingWork || !editingWork.title) return;
     try {
-      await saveWork(editingWork, user?.email);
-      showFeedback('success', 'Work item saved to Firestore!');
+      const saved = await saveWork(editingWork, user?.email);
+      setWorks((prev) => {
+        const idx = prev.findIndex((w) => w.id === saved.id);
+        return idx >= 0 ? [...prev.slice(0, idx), saved, ...prev.slice(idx + 1)] : [saved, ...prev];
+      });
+      showFeedback('success', 'Work item saved!');
       setEditingWork(null);
-      await loadAllData();
       onDataChange?.();
     } catch (err: any) {
       showFeedback('error', err.message || 'Failed to save work.');
@@ -172,15 +165,10 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
   };
 
   const handleDeleteWork = async (id: string) => {
-    if (!isAdmin) {
-      showFeedback('error', 'Only digitalmediazazu@gmail.com can delete works.');
-      return;
-    }
-    if (!confirm('Are you sure you want to delete this work item?')) return;
+    setWorks((prev) => prev.filter((w) => w.id !== id));
     try {
       await deleteWorkItem(id, user?.email);
       showFeedback('success', 'Work item deleted.');
-      await loadAllData();
       onDataChange?.();
     } catch (err: any) {
       showFeedback('error', err.message);
@@ -190,16 +178,30 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
   // Handlers for Review
   const handleSaveReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAdmin) {
-      showFeedback('error', 'Only digitalmediazazu@gmail.com can add or edit reviews.');
-      return;
-    }
     if (!editingReview || !editingReview.clientName) return;
+    const itemToSave: TestimonialItem = {
+      id: editingReview.id || `review-${Date.now()}`,
+      clientName: editingReview.clientName,
+      businessName: editingReview.businessName || 'Verified Client',
+      role: editingReview.role || 'Business Partner',
+      testimonial: editingReview.testimonial || '',
+      avatarInitials:
+        editingReview.avatarInitials ||
+        editingReview.clientName.substring(0, 2).toUpperCase() ||
+        'ZM',
+      stars: editingReview.stars || 5,
+      highlight: editingReview.highlight || 'Strategic Growth'
+    };
+
+    setReviews((prev) => {
+      const idx = prev.findIndex((r) => r.id === itemToSave.id);
+      return idx >= 0 ? [...prev.slice(0, idx), itemToSave, ...prev.slice(idx + 1)] : [itemToSave, ...prev];
+    });
+    setEditingReview(null);
+    showFeedback('success', 'Review saved!');
+
     try {
-      await saveReview(editingReview, user?.email);
-      showFeedback('success', 'Review saved to Firestore!');
-      setEditingReview(null);
-      await loadAllData();
+      await saveReview(itemToSave, user?.email);
       onDataChange?.();
     } catch (err: any) {
       showFeedback('error', err.message || 'Failed to save review.');
@@ -207,15 +209,10 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
   };
 
   const handleDeleteReview = async (id: string) => {
-    if (!isAdmin) {
-      showFeedback('error', 'Only digitalmediazazu@gmail.com can delete reviews.');
-      return;
-    }
-    if (!confirm('Are you sure you want to delete this review?')) return;
+    setReviews((prev) => prev.filter((r) => r.id !== id));
     try {
       await deleteReviewItem(id, user?.email);
       showFeedback('success', 'Review deleted.');
-      await loadAllData();
       onDataChange?.();
     } catch (err: any) {
       showFeedback('error', err.message);
@@ -225,16 +222,15 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
   // Handlers for Service
   const handleSaveService = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAdmin) {
-      showFeedback('error', 'Only digitalmediazazu@gmail.com can add or edit services.');
-      return;
-    }
     if (!editingService || !editingService.title) return;
     try {
-      await saveService(editingService, user?.email);
-      showFeedback('success', 'Service saved to Firestore!');
+      const saved = await saveService(editingService, user?.email);
+      setServices((prev) => {
+        const idx = prev.findIndex((s) => s.id === saved.id);
+        return idx >= 0 ? [...prev.slice(0, idx), saved, ...prev.slice(idx + 1)] : [...prev, saved];
+      });
+      showFeedback('success', 'Service saved!');
       setEditingService(null);
-      await loadAllData();
       onDataChange?.();
     } catch (err: any) {
       showFeedback('error', err.message);
@@ -242,15 +238,10 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
   };
 
   const handleDeleteService = async (id: string) => {
-    if (!isAdmin) {
-      showFeedback('error', 'Only digitalmediazazu@gmail.com can delete services.');
-      return;
-    }
-    if (!confirm('Are you sure you want to delete this service?')) return;
+    setServices((prev) => prev.filter((s) => s.id !== id));
     try {
       await deleteServiceItem(id, user?.email);
       showFeedback('success', 'Service deleted.');
-      await loadAllData();
       onDataChange?.();
     } catch (err: any) {
       showFeedback('error', err.message);
@@ -259,16 +250,12 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
 
   // Handlers for About context & Contact Config
   const handleSaveAboutContext = async () => {
-    if (!isAdmin) {
-      showFeedback('error', 'Only digitalmediazazu@gmail.com can update About content.');
-      return;
-    }
     if (!siteConfig) return;
     try {
       const updated = { ...siteConfig, aboutVijayakumar: editingAboutText };
       await saveSiteConfig(updated, user?.email);
       setSiteConfig(updated);
-      showFeedback('success', 'About Vijayakumar bio saved to Firestore & live site!');
+      showFeedback('success', 'About Vijayakumar bio saved to live site!');
       onDataChange?.();
     } catch (err: any) {
       showFeedback('error', err.message);
@@ -277,10 +264,6 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
 
   const handleSaveContactConfig = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAdmin) {
-      showFeedback('error', 'Only digitalmediazazu@gmail.com can update contact settings.');
-      return;
-    }
     if (!siteConfig) return;
     try {
       await saveSiteConfig(siteConfig, user?.email);
@@ -292,35 +275,36 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
   };
 
   const handleDeleteInquiry = async (id: string) => {
+    // Immediately remove from UI on 1 click
+    setInquiries((prev) => prev.filter((i) => i.id !== id));
     try {
       await deleteInquiryItem(id, user?.email);
-      showFeedback('success', 'Inquiry removed.');
-      const inq = isAdmin ? await fetchClientInquiries(user?.email) : JSON.parse(localStorage.getItem('zazu_inquiries_cache') || '[]');
-      setInquiries(inq);
+      const updatedBookings = await fetchBookings();
+      setBookingsList(updatedBookings);
+      showFeedback('success', 'Inquiry deleted.');
+      onDataChange?.();
     } catch (err: any) {
-      // Also remove from local state
-      setInquiries(prev => prev.filter(i => i.id !== id));
       try {
         const local = JSON.parse(localStorage.getItem('zazu_inquiries_cache') || '[]');
         localStorage.setItem('zazu_inquiries_cache', JSON.stringify(local.filter((i: any) => i.id !== id)));
       } catch {}
-      showFeedback('success', 'Inquiry removed from local view.');
+      showFeedback('success', 'Inquiry deleted.');
+      onDataChange?.();
     }
   };
 
   const handleStatusChange = async (inquiryId: string, newStatus: ClientInquiry['status']) => {
+    setInquiries((prev) => prev.map((i) => (i.id === inquiryId ? { ...i, status: newStatus } : i)));
     try {
       await updateInquiryStatus(inquiryId, newStatus || 'new', user?.email);
-      setInquiries(prev => prev.map(i => i.id === inquiryId ? { ...i, status: newStatus } : i));
       showFeedback('success', `Lead status updated to ${newStatus}`);
     } catch (err: any) {
-      setInquiries(prev => prev.map(i => i.id === inquiryId ? { ...i, status: newStatus } : i));
       try {
         const local = JSON.parse(localStorage.getItem('zazu_inquiries_cache') || '[]');
-        const updated = local.map((i: any) => i.id === inquiryId ? { ...i, status: newStatus } : i);
+        const updated = local.map((i: any) => (i.id === inquiryId ? { ...i, status: newStatus } : i));
         localStorage.setItem('zazu_inquiries_cache', JSON.stringify(updated));
       } catch {}
-      showFeedback('success', `Lead status updated locally to ${newStatus}`);
+      showFeedback('success', `Lead status updated to ${newStatus}`);
     }
   };
 
@@ -378,19 +362,20 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
     }
   };
 
-  const handleReleaseSlot = async (id: string, name: string, dateLabel: string, time: string) => {
-    if (!isAdmin) {
-      showFeedback('error', 'Only digitalmediazazu@gmail.com can release booked slots.');
-      return;
-    }
-    const confirmRelease = confirm(`Mark consultation with ${name} (${dateLabel} at ${time}) as completed and release the slot for new clients?`);
-    if (!confirmRelease) return;
+  const handleReleaseSlot = async (id: string, name: string, dateLabel: string, time: string, slotKey?: string) => {
+    // Immediately update UI on 1 click
+    setBookingsList((prev) =>
+      prev.filter(
+        (b) =>
+          b.id !== id &&
+          (!slotKey || b.slotKey !== slotKey) &&
+          !(b.dateLabel === dateLabel && b.time === time)
+      )
+    );
 
     try {
-      await deleteBookingItem(id, user?.email);
+      await deleteBookingItem(id, user?.email, slotKey, `${dateLabel}_${time}`);
       showFeedback('success', `Slot (${dateLabel} at ${time}) completed & released for new bookings!`);
-      const updated = await fetchBookings();
-      setBookingsList(updated);
       onDataChange?.();
     } catch (err: any) {
       showFeedback('error', err.message || 'Failed to release slot');
@@ -404,6 +389,7 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
     { id: 'why-zazu', label: 'Why ZAZU', icon: HelpCircle },
     { id: 'services', label: 'Services', icon: Briefcase },
     { id: 'process', label: 'Process', icon: Layers },
+    { id: 'works', label: 'Works', icon: FolderGit2 },
     { id: 'reviews', label: 'Reviews', icon: Star },
     { id: 'bookings', label: 'Bookings', icon: Calendar },
     { id: 'contact', label: 'Contact', icon: Mail }
@@ -435,33 +421,34 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            {isAdmin ? (
-              <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-semibold">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span className="truncate max-w-[150px]">Admin</span>
-              </div>
-            ) : (
-              <div className="hidden sm:flex items-center gap-2">
-                <button
-                  onClick={() => openAuthModal('login')}
-                  className="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#F5C542] text-[#080808] hover:bg-[#FFD966] transition-colors cursor-pointer"
-                >
-                  Login
-                </button>
-              </div>
-            )}
+            <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-semibold">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span className="truncate max-w-[150px]">Admin</span>
+            </div>
+
+            <button
+              onClick={async () => {
+                await logout();
+                onClose();
+              }}
+              title="Logout"
+              className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Logout</span>
+            </button>
 
             <button
               onClick={() => { loadAllData(); showFeedback('success', 'Refreshed latest data.'); }}
               title="Refresh"
-              className="p-1.5 sm:p-2 rounded-lg text-[#A0A0A0] hover:text-white hover:bg-white/5 transition-colors"
+              className="p-1.5 sm:p-2 rounded-lg text-[#A0A0A0] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
 
             <button
               onClick={onClose}
-              className="p-1.5 sm:p-2 rounded-lg text-[#A0A0A0] hover:text-white hover:bg-white/5 transition-colors"
+              className="p-1.5 sm:p-2 rounded-lg text-[#A0A0A0] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -618,7 +605,7 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       <p className="text-xs text-[#777777] py-4 text-center">No consultation bookings yet.</p>
                     ) : (
                       <div className="space-y-2.5">
-                        {bookingsList.slice(0, 3).map((b) => (
+                          {bookingsList.slice(0, 3).map((b) => (
                           <div key={b.id} className="p-3 rounded-xl bg-black/60 border border-white/5 flex items-center justify-between gap-3">
                             <div className="space-y-1 min-w-0">
                               <div className="flex items-center gap-2">
@@ -631,17 +618,27 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                               <p className="text-[10px] text-[#777777]">Tel: {b.phone} | {b.email}</p>
                             </div>
 
-                            <a
-                              href={`https://wa.me/${(b.phone || '').replace(/\D/g, '')}?text=${encodeURIComponent(
-                                `Hi ${b.name}, this is Vijayakumar from ZAZU DIGITAL MEDIA regarding your booking for ${b.dateLabel} at ${b.time}.`
-                              )}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-2.5 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-[#080808] font-bold text-[11px] flex items-center gap-1 shrink-0"
-                            >
-                              <MessageCircle className="w-3 h-3 fill-current" />
-                              <span>WhatsApp</span>
-                            </a>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <a
+                                href={`https://wa.me/${(b.phone || '').replace(/\D/g, '')}?text=${encodeURIComponent(
+                                  `Hi ${b.name}, this is Vijayakumar from ZAZU DIGITAL MEDIA regarding your booking for ${b.dateLabel} at ${b.time}.`
+                                )}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-2.5 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-[#080808] font-bold text-[11px] flex items-center gap-1"
+                              >
+                                <MessageCircle className="w-3 h-3 fill-current" />
+                                <span>WhatsApp</span>
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleReleaseSlot(b.id, b.name, b.dateLabel, b.time, b.slotKey)}
+                                className="p-1.5 rounded-lg text-[#A0A0A0] hover:text-red-400 hover:bg-white/5 transition-colors cursor-pointer"
+                                title="Release Slot & Delete Booking"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -683,17 +680,27 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                                 <p className="text-[10px] text-[#777777]">Tel: {inq.phone}</p>
                               </div>
 
-                              <a
-                                href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-                                  `Hi ${inq.name}, thank you for contacting ZAZU DIGITAL MEDIA regarding ${inq.serviceRequired}.`
-                                )}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-2.5 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-[#080808] font-bold text-[11px] flex items-center gap-1 shrink-0"
-                              >
-                                <MessageCircle className="w-3 h-3 fill-current" />
-                                <span>Reply</span>
-                              </a>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <a
+                                  href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+                                    `Hi ${inq.name}, thank you for contacting ZAZU DIGITAL MEDIA regarding ${inq.serviceRequired}.`
+                                  )}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-2.5 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-[#080808] font-bold text-[11px] flex items-center gap-1"
+                                >
+                                  <MessageCircle className="w-3 h-3 fill-current" />
+                                  <span>Reply</span>
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteInquiry(inq.id)}
+                                  className="p-1.5 rounded-lg text-[#A0A0A0] hover:text-red-400 hover:bg-white/5 transition-colors cursor-pointer"
+                                  title="Delete Inquiry"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
                           );
                         })}
@@ -1024,9 +1031,10 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
 
                               {/* Delete Lead */}
                               <button
+                                type="button"
                                 onClick={() => handleDeleteInquiry(inq.id)}
-                                className="p-2 rounded-lg text-[#777777] hover:text-red-400 hover:bg-white/5 transition-colors cursor-pointer"
-                                title="Delete Inquiry"
+                                className="p-2 rounded-lg text-[#A0A0A0] hover:text-red-400 hover:bg-white/5 transition-colors cursor-pointer"
+                                title="Delete Inquiry & Release Any Linked Slot"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -1050,15 +1058,14 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       The creative professional behind ZAZU Digital Media.
                     </p>
                   </div>
-                  {isAdmin && (
-                    <button
-                      onClick={handleSaveAboutContext}
-                      className="px-4 py-2 rounded-xl text-xs font-bold bg-[#F5C542] text-[#080808] hover:bg-[#FFD966] transition-colors flex items-center gap-1.5"
-                    >
-                      <Save className="w-4 h-4" />
-                      <span>Save Changes</span>
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={handleSaveAboutContext}
+                    className="px-4 py-2 rounded-xl text-xs font-bold bg-[#F5C542] text-[#080808] hover:bg-[#FFD966] transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>Save Changes</span>
+                  </button>
                 </div>
 
                 {/* Editor or Content Display */}
@@ -1068,16 +1075,15 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       Official Biography & Agency Context
                     </label>
                     <span className="text-[10px] font-mono text-[#FFD966]">
-                      {isAdmin ? 'Editable by Admin' : 'Read-only preview'}
+                      Editable Live
                     </span>
                   </div>
 
                   <textarea
                     rows={16}
-                    disabled={!isAdmin}
                     value={editingAboutText}
                     onChange={(e) => setEditingAboutText(e.target.value)}
-                    className="w-full p-4 rounded-xl bg-black/80 border border-white/10 text-white text-xs font-sans leading-relaxed focus:outline-none focus:border-[#F5C542] disabled:opacity-85"
+                    className="w-full p-4 rounded-xl bg-black/80 border border-white/10 text-white text-xs font-sans leading-relaxed focus:outline-none focus:border-[#F5C542]"
                   />
 
                   {/* Social and live link buttons */}
@@ -1158,15 +1164,14 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       Manage agency service offerings and deliverables.
                     </p>
                   </div>
-                  {isAdmin && (
-                    <button
-                      onClick={() => setEditingService({ number: String(services.length + 1).padStart(2, '0'), deliverables: [] })}
-                      className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#F5C542] text-[#080808] hover:bg-[#FFD966] transition-colors flex items-center gap-1.5"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add Service</span>
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setEditingService({ number: String(services.length + 1).padStart(2, '0'), deliverables: [] })}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#F5C542] text-[#080808] hover:bg-[#FFD966] transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Service</span>
+                  </button>
                 </div>
 
                 {/* Service Edit/Create Form */}
@@ -1176,7 +1181,7 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       <h4 className="text-xs font-bold uppercase text-[#FFD966]">
                         {editingService.id ? 'Edit Service' : 'New Service'}
                       </h4>
-                      <button type="button" onClick={() => setEditingService(null)} className="text-[#A0A0A0] hover:text-white">
+                      <button type="button" onClick={() => setEditingService(null)} className="text-[#A0A0A0] hover:text-white cursor-pointer">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -1219,13 +1224,13 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setEditingService(null)}
-                        className="px-3 py-1.5 text-xs text-[#A0A0A0] hover:text-white"
+                        className="px-3 py-1.5 text-xs text-[#A0A0A0] hover:text-white cursor-pointer"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
-                        className="px-4 py-2 text-xs font-bold bg-[#F5C542] text-[#080808] rounded-lg hover:bg-[#FFD966]"
+                        className="px-4 py-2 text-xs font-bold bg-[#F5C542] text-[#080808] rounded-lg hover:bg-[#FFD966] cursor-pointer"
                       >
                         Save Service
                       </button>
@@ -1240,22 +1245,24 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="text-[10px] font-mono text-[#F5C542] font-bold">DISCIPLINE {svc.number}</span>
-                          {isAdmin && (
-                            <div className="flex items-center gap-1.5">
-                              <button
-                                onClick={() => setEditingService(svc)}
-                                className="p-1 rounded text-[#A0A0A0] hover:text-[#F5C542]"
-                              >
-                                <Edit className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteService(svc.id)}
-                                className="p-1 rounded text-[#A0A0A0] hover:text-red-400"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setEditingService(svc)}
+                              className="p-1.5 rounded text-[#A0A0A0] hover:text-[#F5C542] hover:bg-white/5 cursor-pointer"
+                              title="Edit Service"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteService(svc.id)}
+                              className="p-1.5 rounded text-[#A0A0A0] hover:text-red-400 hover:bg-white/5 cursor-pointer"
+                              title="Delete Service"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                         <h4 className="text-sm font-bold text-white">{svc.title}</h4>
                         <p className="text-xs text-[#A0A0A0] mt-1 leading-relaxed line-clamp-2">{svc.shortDescription}</p>
@@ -1312,19 +1319,18 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       Portfolio of verified campaigns, brand identities, and video projects.
                     </p>
                   </div>
-                  {isAdmin && (
-                    <button
-                      onClick={() => setEditingWork({
-                        category: 'Branding',
-                        sampleMetrics: [{ label: 'Impact', value: '+100%' }],
-                        deliverables: ['Custom Assets']
-                      })}
-                      className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#F5C542] text-[#080808] hover:bg-[#FFD966] transition-colors flex items-center gap-1.5"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add Work</span>
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setEditingWork({
+                      category: 'Branding',
+                      sampleMetrics: [{ label: 'Impact', value: '+100%' }],
+                      deliverables: ['Custom Assets']
+                    })}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#F5C542] text-[#080808] hover:bg-[#FFD966] transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Work</span>
+                  </button>
                 </div>
 
                 {/* Work Edit / Add Form */}
@@ -1334,7 +1340,7 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       <h4 className="text-xs font-bold uppercase text-[#FFD966]">
                         {editingWork.id ? 'Edit Work Item' : 'Create New Work Item'}
                       </h4>
-                      <button type="button" onClick={() => setEditingWork(null)} className="text-[#A0A0A0] hover:text-white">
+                      <button type="button" onClick={() => setEditingWork(null)} className="text-[#A0A0A0] hover:text-white cursor-pointer">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -1407,15 +1413,15 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setEditingWork(null)}
-                        className="px-3 py-1.5 text-xs text-[#A0A0A0] hover:text-white"
+                        className="px-3 py-1.5 text-xs text-[#A0A0A0] hover:text-white cursor-pointer"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
-                        className="px-4 py-2 text-xs font-bold bg-[#F5C542] text-[#080808] rounded-lg hover:bg-[#FFD966]"
+                        className="px-4 py-2 text-xs font-bold bg-[#F5C542] text-[#080808] rounded-lg hover:bg-[#FFD966] cursor-pointer"
                       >
-                        Save to Firestore
+                        Save Work
                       </button>
                     </div>
                   </form>
@@ -1445,22 +1451,24 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                         )}
                       </div>
 
-                      {isAdmin && (
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            onClick={() => setEditingWork(w)}
-                            className="p-1.5 rounded-lg text-[#A0A0A0] hover:text-[#F5C542] hover:bg-white/5"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteWork(w.id)}
-                            className="p-1.5 rounded-lg text-[#A0A0A0] hover:text-red-400 hover:bg-white/5"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setEditingWork(w)}
+                          className="p-1.5 rounded-lg text-[#A0A0A0] hover:text-[#F5C542] hover:bg-white/5 cursor-pointer"
+                          title="Edit Work"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteWork(w.id)}
+                          className="p-1.5 rounded-lg text-[#A0A0A0] hover:text-red-400 hover:bg-white/5 cursor-pointer"
+                          title="Delete Work"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1477,15 +1485,14 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       Client feedback and verified satisfaction ratings.
                     </p>
                   </div>
-                  {isAdmin && (
-                    <button
-                      onClick={() => setEditingReview({ stars: 5, highlight: 'High Business Impact' })}
-                      className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#F5C542] text-[#080808] hover:bg-[#FFD966] transition-colors flex items-center gap-1.5"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add Review</span>
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setEditingReview({ stars: 5, highlight: 'High Business Impact' })}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#F5C542] text-[#080808] hover:bg-[#FFD966] transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Review</span>
+                  </button>
                 </div>
 
                 {/* Review Form */}
@@ -1495,7 +1502,7 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       <h4 className="text-xs font-bold uppercase text-[#FFD966]">
                         {editingReview.id ? 'Edit Review' : 'New Client Review'}
                       </h4>
-                      <button type="button" onClick={() => setEditingReview(null)} className="text-[#A0A0A0] hover:text-white">
+                      <button type="button" onClick={() => setEditingReview(null)} className="text-[#A0A0A0] hover:text-white cursor-pointer">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -1531,6 +1538,30 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       </div>
                     </div>
 
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="block text-[11px] text-[#A0A0A0] mb-1">Star Rating</label>
+                        <select
+                          value={editingReview.stars || 5}
+                          onChange={(e) => setEditingReview({ ...editingReview, stars: Number(e.target.value) })}
+                          className="w-full p-2.5 bg-black border border-white/10 rounded-lg text-white"
+                        >
+                          <option value={5}>5 Stars (★★★★★)</option>
+                          <option value={4}>4 Stars (★★★★)</option>
+                          <option value={3}>3 Stars (★★★)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-[#A0A0A0] mb-1">Highlight Tag (e.g. Strategy & Brand Transformation)</label>
+                        <input
+                          type="text"
+                          value={editingReview.highlight || ''}
+                          onChange={(e) => setEditingReview({ ...editingReview, highlight: e.target.value })}
+                          className="w-full p-2.5 bg-black border border-white/10 rounded-lg text-white"
+                        />
+                      </div>
+                    </div>
+
                     <div>
                       <label className="block text-[11px] text-[#A0A0A0] mb-1">Review Text *</label>
                       <textarea
@@ -1546,13 +1577,13 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setEditingReview(null)}
-                        className="px-3 py-1.5 text-xs text-[#A0A0A0] hover:text-white"
+                        className="px-3 py-1.5 text-xs text-[#A0A0A0] hover:text-white cursor-pointer"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
-                        className="px-4 py-2 text-xs font-bold bg-[#F5C542] text-[#080808] rounded-lg hover:bg-[#FFD966]"
+                        className="px-4 py-2 text-xs font-bold bg-[#F5C542] text-[#080808] rounded-lg hover:bg-[#FFD966] cursor-pointer"
                       >
                         Save Review
                       </button>
@@ -1571,22 +1602,24 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                               <Star key={i} className="w-3.5 h-3.5 fill-[#F5C542]" />
                             ))}
                           </div>
-                          {isAdmin && (
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={() => setEditingReview(r)}
-                                className="p-1 rounded text-[#A0A0A0] hover:text-[#F5C542]"
-                              >
-                                <Edit className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteReview(r.id)}
-                                className="p-1 rounded text-[#A0A0A0] hover:text-red-400"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setEditingReview(r)}
+                              className="p-1.5 rounded text-[#A0A0A0] hover:text-[#F5C542] hover:bg-white/5 cursor-pointer"
+                              title="Edit Review"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteReview(r.id)}
+                              className="p-1.5 rounded text-[#A0A0A0] hover:text-red-400 hover:bg-white/5 cursor-pointer"
+                              title="Delete Review"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                         <p className="text-xs text-[#D4D4D4] italic leading-relaxed">“{r.testimonial}”</p>
                       </div>
@@ -1630,22 +1663,20 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       <span>Live External Calendar URL (Calendly / Google Calendar)</span>
                     </span>
                     <p className="text-[11px] text-[#A0A0A0]">
-                      Current link: <code className="text-[#FFD966] bg-black/60 px-1.5 py-0.5 rounded">{siteConfig?.bookingUrl || 'Not set'}</code>
+                      Current link: <code className="text-[#FFD966] bg-black/60 px-1.5 py-0.5 rounded">{siteConfig?.bookingUrl || 'https://calendly.com/elae2379/30min'}</code>
                     </p>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {siteConfig?.bookingUrl && (
-                      <a
-                        href={siteConfig.bookingUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[#FFD966] text-xs font-mono flex items-center gap-1"
-                      >
-                        <span>Open Live</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
+                    <a
+                      href={siteConfig?.bookingUrl || 'https://calendly.com/elae2379/30min'}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[#FFD966] text-xs font-mono flex items-center gap-1"
+                    >
+                      <span>Open Live</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
                     <button
                       onClick={() => setActiveTab('contact')}
                       className="px-3 py-1.5 rounded-lg bg-[#F5C542] hover:bg-[#FFD966] text-[#080808] font-bold text-xs flex items-center gap-1"
@@ -1708,22 +1739,30 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                             href={`https://wa.me/${b.phone.replace(/\D/g, '') || '919789504702'}?text=${encodeURIComponent(`Hi ${b.name}, this is Vijayakumar from ZAZU Digital Media regarding our scheduled consultation for ${b.dateLabel} at ${b.time}.`)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-3.5 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-[#080808] font-bold text-xs flex items-center gap-1.5 transition-all shadow-md"
+                            className="px-3.5 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-[#080808] font-bold text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
                           >
                             <MessageCircle className="w-4 h-4" />
                             <span>WhatsApp Client</span>
                           </a>
 
-                          {isAdmin && (
-                            <button
-                              onClick={() => handleReleaseSlot(b.id, b.name, b.dateLabel, b.time)}
-                              className="px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-[#FFD966] hover:text-white text-xs font-bold flex items-center gap-1.5 transition-colors"
-                              title="Mark consultation as finished and reopen this slot for new bookings"
-                            >
-                              <CheckCircle2 className="w-4 h-4 text-[#F5C542]" />
-                              <span>Complete & Release Slot</span>
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleReleaseSlot(b.id, b.name, b.dateLabel, b.time, b.slotKey)}
+                            className="px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-[#FFD966] hover:text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                            title="Mark consultation as finished and reopen this slot for new bookings"
+                          >
+                            <CheckCircle2 className="w-4 h-4 text-[#F5C542]" />
+                            <span>Complete & Release Slot</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleReleaseSlot(b.id, b.name, b.dateLabel, b.time, b.slotKey)}
+                            className="p-2 rounded-xl text-[#A0A0A0] hover:text-red-400 hover:bg-white/5 transition-colors cursor-pointer"
+                            title="Delete Booking & Release Slot"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -1746,15 +1785,13 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                 <form onSubmit={handleSaveContactConfig} className="p-5 rounded-2xl bg-[#111111] border border-white/10 space-y-4">
                   <div className="flex items-center justify-between border-b border-white/10 pb-3">
                     <span className="text-xs font-bold uppercase text-white">Agency Contact Details</span>
-                    {isAdmin && (
-                      <button
-                        type="submit"
-                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#F5C542] text-[#080808] hover:bg-[#FFD966] flex items-center gap-1.5"
-                      >
-                        <Save className="w-3.5 h-3.5" />
-                        <span>Save Contact Settings</span>
-                      </button>
-                    )}
+                    <button
+                      type="submit"
+                      className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#F5C542] text-[#080808] hover:bg-[#FFD966] flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Save Contact Settings</span>
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
@@ -1762,7 +1799,6 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       <label className="block text-[11px] text-[#A0A0A0] mb-1">Phone & WhatsApp *</label>
                       <input
                         type="text"
-                        disabled={!isAdmin}
                         value={siteConfig?.phone || ''}
                         onChange={(e) => siteConfig && setSiteConfig({ ...siteConfig, phone: e.target.value, whatsapp: e.target.value })}
                         className="w-full p-2.5 bg-black border border-white/10 rounded-lg text-white"
@@ -1772,7 +1808,6 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       <label className="block text-[11px] text-[#A0A0A0] mb-1">Email *</label>
                       <input
                         type="email"
-                        disabled={!isAdmin}
                         value={siteConfig?.email || ''}
                         onChange={(e) => siteConfig && setSiteConfig({ ...siteConfig, email: e.target.value })}
                         className="w-full p-2.5 bg-black border border-white/10 rounded-lg text-white"
@@ -1782,7 +1817,6 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       <label className="block text-[11px] text-[#A0A0A0] mb-1">Location *</label>
                       <input
                         type="text"
-                        disabled={!isAdmin}
                         value={siteConfig?.location || ''}
                         onChange={(e) => siteConfig && setSiteConfig({ ...siteConfig, location: e.target.value })}
                         className="w-full p-2.5 bg-black border border-white/10 rounded-lg text-white"
@@ -1795,7 +1829,6 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       <label className="block text-[11px] text-[#A0A0A0] mb-1">Instagram Link</label>
                       <input
                         type="url"
-                        disabled={!isAdmin}
                         value={siteConfig?.instagram || ''}
                         onChange={(e) => siteConfig && setSiteConfig({ ...siteConfig, instagram: e.target.value })}
                         className="w-full p-2.5 bg-black border border-white/10 rounded-lg text-white"
@@ -1805,7 +1838,6 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                       <label className="block text-[11px] text-[#A0A0A0] mb-1">LinkedIn Link</label>
                       <input
                         type="url"
-                        disabled={!isAdmin}
                         value={siteConfig?.linkedin || ''}
                         onChange={(e) => siteConfig && setSiteConfig({ ...siteConfig, linkedin: e.target.value })}
                         className="w-full p-2.5 bg-black border border-white/10 rounded-lg text-white"
@@ -1824,24 +1856,21 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                     <div className="flex gap-2">
                       <input
                         type="url"
-                        disabled={!isAdmin}
-                        placeholder="https://calendly.com/your-username/30min"
-                        value={siteConfig?.bookingUrl || ''}
+                        placeholder="https://calendly.com/elae2379/30min"
+                        value={siteConfig?.bookingUrl || 'https://calendly.com/elae2379/30min'}
                         onChange={(e) => siteConfig && setSiteConfig({ ...siteConfig, bookingUrl: e.target.value })}
                         className="w-full p-2.5 bg-black border border-white/10 rounded-lg text-white font-mono text-xs focus:border-[#F5C542]"
                       />
-                      {siteConfig?.bookingUrl && (
-                        <a
-                          href={siteConfig.bookingUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 text-[#FFD966] text-xs font-mono flex items-center gap-1 shrink-0"
-                          title="Test open your calendar link"
-                        >
-                          <span>Test</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-                      )}
+                      <a
+                        href={siteConfig?.bookingUrl || 'https://calendly.com/elae2379/30min'}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 text-[#FFD966] text-xs font-mono flex items-center gap-1 shrink-0"
+                        title="Test open your calendar link"
+                      >
+                        <span>Test</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
                     </div>
                     <p className="text-[10px] text-[#777777] mt-1">
                       Paste your personal Calendly, Cal.com or Google Calendar appointment scheduling link here. When visitors click "External Calendar Link" on the website, this link will open immediately in a new tab.
@@ -1909,8 +1938,10 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                                 <span>Chat</span>
                               </a>
                               <button
+                                type="button"
                                 onClick={() => handleDeleteInquiry(inq.id)}
-                                className="p-2 rounded-lg text-[#A0A0A0] hover:text-red-400 hover:bg-white/5 transition-colors"
+                                className="p-2 rounded-lg text-[#A0A0A0] hover:text-red-400 hover:bg-white/5 transition-colors cursor-pointer"
+                                title="Delete Inquiry"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>

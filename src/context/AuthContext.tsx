@@ -11,8 +11,9 @@ import { auth, googleProvider } from '../firebase/config';
 import { AuthUser } from '../types';
 
 export const ADMIN_EMAIL = 'digitalmediazazu@gmail.com';
-export const ADMIN_EMAILS = ['digitalmediazazu@gmail.com', 'eladigitalw@gmail.com', 'elae2379@gmail.com'];
-export const ADMIN_DEFAULT_PASSWORD = 'digitalmedia';
+export const ADMIN_EMAILS = ['digitalmediazazu@gmail.com', 'eladigitalw@gmail.com', 'elae2379@gmail.com', 'admin@zazudigitalmedia.com'];
+export const ADMIN_DEFAULT_PASSWORD = 'admin123';
+export const ADMIN_VALID_PASSWORDS = ['admin123', 'digitalmedia'];
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -76,8 +77,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (saved) {
           try {
             const parsed = JSON.parse(saved);
-            if (parsed.email === ADMIN_EMAIL) {
-              setUser(parsed);
+            const isSavedAdmin = ADMIN_EMAILS.some(
+              (adm) => adm.toLowerCase() === (parsed?.email || '').trim().toLowerCase()
+            );
+            if (isSavedAdmin) {
+              setUser({ ...parsed, isAdmin: true });
               setLoading(false);
               return;
             }
@@ -93,21 +97,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loginWithEmailPassword = async (emailOrUsername: string, pass: string): Promise<AuthUser> => {
-    let input = emailOrUsername.trim().toLowerCase();
+    const rawInput = emailOrUsername.trim().toLowerCase();
+    const trimmedPass = pass.trim();
+    let input = rawInput;
     
-    // Support username aliases for admin convenience:
+    // Support username aliases for admin:
     // "admin", "zazu", "eladigitalw", "vijayakumar"
-    if (input === 'admin' || input === 'zazu' || input === 'vijayakumar') {
+    if (rawInput === 'admin' || rawInput === 'zazu' || rawInput === 'vijayakumar') {
       input = ADMIN_EMAIL.toLowerCase();
-    } else if (input === 'eladigitalw' || input === 'ela') {
+    } else if (rawInput === 'eladigitalw' || rawInput === 'ela') {
       input = 'eladigitalw@gmail.com';
-    } else if (!input.includes('@')) {
-      input = `${input}@gmail.com`;
+    } else if (!rawInput.includes('@')) {
+      input = `${rawInput}@gmail.com`;
     }
 
-    // Direct match for authorized admin passwords
-    const isAdminAccount = ADMIN_EMAILS.some(adm => adm.toLowerCase() === input);
-    if (isAdminAccount && (pass === ADMIN_DEFAULT_PASSWORD || pass.length >= 4)) {
+    // Direct match for authorized admin credentials (e.g., admin / admin123)
+    const isAdminAccount = rawInput === 'admin' || ADMIN_EMAILS.some(adm => adm.toLowerCase() === input);
+    const isValidAdminPass = ADMIN_VALID_PASSWORDS.includes(trimmedPass);
+
+    if (isAdminAccount && isValidAdminPass) {
       const adminUser: AuthUser = {
         uid: `admin-${input.replace(/[^a-z0-9]/g, '')}`,
         email: input,
@@ -117,53 +125,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(adminUser);
       localStorage.setItem('zazu_auth_user', JSON.stringify(adminUser));
       setIsAuthModalOpen(false);
+      // Dispatch custom event so App.tsx immediately opens the Admin Dashboard
+      window.dispatchEvent(new CustomEvent('zazu-admin-logged-in'));
       return adminUser;
     }
 
+    if (rawInput === 'admin' && !isValidAdminPass) {
+      throw new Error('Invalid administrator password.');
+    }
+
     try {
-      const cred = await signInWithEmailAndPassword(auth, input, pass);
+      const cred = await signInWithEmailAndPassword(auth, input, trimmedPass);
       const u = formatUser(cred.user);
       setUser(u);
       localStorage.setItem('zazu_auth_user', JSON.stringify(u));
       setIsAuthModalOpen(false);
+      if (u.isAdmin) {
+        window.dispatchEvent(new CustomEvent('zazu-admin-logged-in'));
+      }
       return u;
     } catch (err: any) {
-      if (isAdminAccount) {
-        const adminUser: AuthUser = {
-          uid: `admin-${input.replace(/[^a-z0-9]/g, '')}`,
-          email: input,
-          displayName: input === 'eladigitalw@gmail.com' ? 'Kasthuri / Ela (Admin)' : 'Vijayakumar (Admin)',
-          isAdmin: true
-        };
-        setUser(adminUser);
-        localStorage.setItem('zazu_auth_user', JSON.stringify(adminUser));
-        setIsAuthModalOpen(false);
-        return adminUser;
+      if (isAdminAccount && !isValidAdminPass) {
+        throw new Error('Invalid administrator password.');
       }
-      throw err;
+      throw new Error('Invalid username/email or password. Please verify your credentials.');
     }
   };
 
   const signupWithEmailPassword = async (email: string, pass: string, name?: string): Promise<AuthUser> => {
     const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPass = pass.trim();
     const finalDisplayName = name?.trim() || email.split('@')[0];
     
     // Special admin check
-    if (trimmedEmail === ADMIN_EMAIL.toLowerCase() && pass === ADMIN_DEFAULT_PASSWORD) {
+    const isAdminAccount = trimmedEmail === 'admin' || ADMIN_EMAILS.some(adm => adm.toLowerCase() === trimmedEmail);
+    if (isAdminAccount && ADMIN_VALID_PASSWORDS.includes(trimmedPass)) {
+      const resolvedEmail = trimmedEmail.includes('@') ? trimmedEmail : ADMIN_EMAIL;
       const adminUser: AuthUser = {
-        uid: 'admin-zazu-master-uid',
-        email: ADMIN_EMAIL,
+        uid: `admin-${resolvedEmail.replace(/[^a-z0-9]/g, '')}`,
+        email: resolvedEmail,
         displayName: finalDisplayName || 'Vijayakumar (Admin)',
         isAdmin: true
       };
       setUser(adminUser);
       localStorage.setItem('zazu_auth_user', JSON.stringify(adminUser));
       setIsAuthModalOpen(false);
+      window.dispatchEvent(new CustomEvent('zazu-admin-logged-in'));
       return adminUser;
     }
 
     try {
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      const cred = await createUserWithEmailAndPassword(auth, email, trimmedPass);
       const u = formatUser(cred.user);
       if (finalDisplayName) {
         u.displayName = finalDisplayName;
@@ -175,19 +187,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err: any) {
       // If email already in use, attempt login
       if (err.code === 'auth/email-already-in-use') {
-        return loginWithEmailPassword(email, pass);
+        return loginWithEmailPassword(email, trimmedPass);
       }
-      // Fallback for demo environments
-      const guestUser: AuthUser = {
-        uid: `user-${Date.now()}`,
-        email: email,
-        displayName: finalDisplayName,
-        isAdmin: ADMIN_EMAILS.some((adm) => adm.toLowerCase() === trimmedEmail)
-      };
-      setUser(guestUser);
-      localStorage.setItem('zazu_auth_user', JSON.stringify(guestUser));
-      setIsAuthModalOpen(false);
-      return guestUser;
+      throw new Error(err.message || 'Unable to register account. Please check your details.');
     }
   };
 
@@ -198,9 +200,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(u);
       localStorage.setItem('zazu_auth_user', JSON.stringify(u));
       setIsAuthModalOpen(false);
+      if (u.isAdmin) {
+        window.dispatchEvent(new CustomEvent('zazu-admin-logged-in'));
+      }
       return u;
     } catch (err: any) {
-      console.error('Firebase Google sign-in error:', err);
+      if (err?.code !== 'auth/popup-closed-by-user' && err?.code !== 'auth/cancelled-popup-request') {
+        console.warn('Firebase Google sign-in notice:', err);
+      }
       throw err;
     }
   };
@@ -213,6 +220,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setUser(null);
     localStorage.removeItem('zazu_auth_user');
+    setAuthModalMode('login');
+    setIsAuthModalOpen(true);
   };
 
   return (

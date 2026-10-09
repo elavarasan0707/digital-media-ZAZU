@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import { sampleBookingSlots } from '../data/agencyData';
 import { Calendar as CalendarIcon, Clock, CheckCircle, ExternalLink, Shield, MessageCircle } from 'lucide-react';
 import { AgencyContactConfig, BookingRecord } from '../types';
-import { submitClientInquiry, fetchBookings, saveBooking } from '../firebase/firestoreService';
+import { submitClientInquiry, fetchBookings, saveBooking, isSlotBooked } from '../firebase/firestoreService';
 
 interface BookingSectionProps {
   agencyConfig: AgencyContactConfig;
@@ -21,7 +23,7 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
   const [isBooked, setIsBooked] = useState(false);
   const [bookedList, setBookedList] = useState<BookingRecord[]>([]);
 
-  // Load booked slots from Firestore & cache
+  // Load booked slots from Firestore & cache with real-time updates
   useEffect(() => {
     let isMounted = true;
     const loadBookings = async () => {
@@ -35,38 +37,80 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
       }
     };
     loadBookings();
+
+    // Real-time Firestore listener so slots lock/release immediately
+    let unsubscribe = () => {};
+    try {
+      const q = query(collection(db, 'bookings'), orderBy('createdAt', 'desc'));
+      unsubscribe = onSnapshot(
+        q,
+        () => {
+          loadBookings();
+        },
+        () => {
+          // Fallback to local cache on listener error
+        }
+      );
+    } catch {}
+
+    const handleCustomUpdate = () => {
+      loadBookings();
+    };
+    window.addEventListener('zazu-bookings-updated', handleCustomUpdate);
+
     return () => {
       isMounted = false;
+      unsubscribe();
+      window.removeEventListener('zazu-bookings-updated', handleCustomUpdate);
     };
   }, []);
 
-  // Generate next 6 weekdays starting tomorrow
-  const days = [
-    { day: 'Mon', date: '28 Sep', label: 'Monday, Sep 28' },
-    { day: 'Tue', date: '29 Sep', label: 'Tuesday, Sep 29' },
-    { day: 'Wed', date: '30 Sep', label: 'Wednesday, Sep 30' },
-    { day: 'Thu', date: '01 Oct', label: 'Thursday, Oct 1' },
-    { day: 'Fri', date: '02 Oct', label: 'Friday, Oct 2' },
-    { day: 'Mon', date: '05 Oct', label: 'Monday, Oct 5' }
-  ];
+  // Dynamically generate the next 6 upcoming working days (Mon-Sat) based on current date
+  const days = React.useMemo(() => {
+    const result: { day: string; date: string; label: string; isoDate: string }[] = [];
+    const dayNamesShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayNamesFull = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    const cursor = new Date();
+    while (result.length < 6) {
+      const dayOfWeek = cursor.getDay();
+      // Include Monday (1) through Saturday (6)
+      if (dayOfWeek !== 0) {
+        const dayNum = String(cursor.getDate()).padStart(2, '0');
+        const monthShort = monthNamesShort[cursor.getMonth()];
+        const year = cursor.getFullYear();
+        const isoDate = `${year}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${dayNum}`;
+        result.push({
+          day: dayNamesShort[dayOfWeek],
+          date: `${dayNum} ${monthShort}`,
+          label: `${dayNamesFull[dayOfWeek]}, ${monthShort} ${cursor.getDate()}, ${year}`,
+          isoDate
+        });
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return result;
+  }, []);
 
   // Auto-switch to an available slot if selected slot is already booked for this date
   useEffect(() => {
     const currentDay = days[selectedDateIndex];
     if (!currentDay) return;
 
-    const currentSlotIsTaken = !sampleBookingSlots.find((s) => s.time === selectedTime)?.available ||
-      bookedList.some((b) => b.slotKey === `${currentDay.date}_${selectedTime}`);
+    const currentSlotIsTaken =
+      !sampleBookingSlots.find((s) => s.time === selectedTime)?.available ||
+      isSlotBooked(bookedList, currentDay, selectedTime);
 
     if (currentSlotIsTaken) {
-      const firstAvailable = sampleBookingSlots.find((s) =>
-        s.available && !bookedList.some((b) => b.slotKey === `${currentDay.date}_${s.time}`)
+      const firstAvailable = sampleBookingSlots.find(
+        (s) => s.available && !isSlotBooked(bookedList, currentDay, s.time)
       );
       if (firstAvailable) {
         setSelectedTime(firstAvailable.time);
       }
     }
-  }, [selectedDateIndex, bookedList]);
+  }, [selectedDateIndex, bookedList, days]);
 
   const topics = [
     'Full-Funnel Digital Growth Audit',
@@ -198,17 +242,15 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
               </div>
             </div>
 
-            {agencyConfig.bookingUrl && (
-              <a
-                href={agencyConfig.bookingUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#F5C542]/40 text-[#FFD966] hover:bg-[#F5C542]/10 transition-colors"
-              >
-                <span>External Calendar Link</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            )}
+            <a
+              href={agencyConfig.bookingUrl || 'https://calendly.com/elae2379/30min'}
+              target="_blank"
+              rel="noreferrer"
+              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#F5C542]/40 text-[#FFD966] hover:bg-[#F5C542]/10 transition-colors"
+            >
+              <span>External Calendar Link</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
           </div>
 
           {isBooked ? (
@@ -255,26 +297,61 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
                 
                 {/* Date Selection */}
                 <div>
-                  <label className="text-xs font-mono-data uppercase text-[#A0A0A0] block mb-3 flex items-center gap-2">
-                    <CalendarIcon className="w-3.5 h-3.5 text-[#F5C542]" />
-                    <span>1. Select Preferred Date</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-xs font-mono-data uppercase text-[#A0A0A0] flex items-center gap-2">
+                      <CalendarIcon className="w-3.5 h-3.5 text-[#F5C542]" />
+                      <span>1. Select Preferred Date (Live Upcoming Dates)</span>
+                    </label>
+                    <span className="text-[10px] font-mono text-[#FFD966]">
+                      {days[selectedDateIndex]?.label}
+                    </span>
+                  </div>
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                    {days.map((item, idx) => (
-                      <button
-                        type="button"
-                        key={idx}
-                        onClick={() => setSelectedDateIndex(idx)}
-                        className={`p-3 rounded-xl border text-center transition-all ${
-                          selectedDateIndex === idx
-                            ? 'bg-[#F5C542] text-[#080808] border-[#F5C542] shadow-[0_0_15px_rgba(245,197,66,0.3)] font-bold'
-                            : 'bg-black/40 text-[#A0A0A0] hover:text-white border-white/5 hover:border-white/20'
-                        }`}
-                      >
-                        <span className="block text-[11px] uppercase">{item.day}</span>
-                        <span className="block text-sm font-mono-data mt-1">{item.date}</span>
-                      </button>
-                    ))}
+                    {days.map((item, idx) => {
+                      const bookedCountForDay = sampleBookingSlots.filter((s) =>
+                        isSlotBooked(bookedList, item, s.time)
+                      ).length;
+                      const isDayFull = bookedCountForDay >= sampleBookingSlots.length;
+
+                      return (
+                        <button
+                          type="button"
+                          key={idx}
+                          onClick={() => setSelectedDateIndex(idx)}
+                          className={`p-3 rounded-xl border text-center transition-all relative ${
+                            selectedDateIndex === idx
+                              ? 'bg-[#F5C542] text-[#080808] border-[#F5C542] shadow-[0_0_15px_rgba(245,197,66,0.3)] font-bold'
+                              : isDayFull
+                              ? 'bg-red-950/20 text-[#777777] border-red-500/30'
+                              : 'bg-black/40 text-[#A0A0A0] hover:text-white border-white/5 hover:border-white/20'
+                          }`}
+                        >
+                          <span className="block text-[11px] uppercase">{item.day}</span>
+                          <span className="block text-sm font-mono-data mt-1">{item.date}</span>
+                          {isDayFull ? (
+                            <span className="block text-[9px] font-bold uppercase text-red-400 mt-1">
+                              Booked
+                            </span>
+                          ) : bookedCountForDay > 0 ? (
+                            <span
+                              className={`block text-[9px] font-mono mt-1 ${
+                                selectedDateIndex === idx ? 'text-[#080808]/80 font-bold' : 'text-[#FFD966]'
+                              }`}
+                            >
+                              {bookedCountForDay} Booked
+                            </span>
+                          ) : (
+                            <span
+                              className={`block text-[9px] font-mono mt-1 ${
+                                selectedDateIndex === idx ? 'text-[#080808]/70' : 'text-emerald-400/80'
+                              }`}
+                            >
+                              Available
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -287,8 +364,7 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                     {sampleBookingSlots.map((slot, idx) => {
                       const currentDay = days[selectedDateIndex];
-                      const slotKey = currentDay ? `${currentDay.date}_${slot.time}` : '';
-                      const isSlotBookedInDb = bookedList.some((b) => b.slotKey === slotKey);
+                      const isSlotBookedInDb = currentDay ? isSlotBooked(bookedList, currentDay, slot.time) : false;
                       const isAvailable = slot.available && !isSlotBookedInDb;
 
                       return (

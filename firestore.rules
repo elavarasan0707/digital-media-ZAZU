@@ -27,10 +27,10 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Reviews (read by public, create/update/delete only by admin)
+    // Reviews (read and create by public clients, update/delete by admin)
     match /reviews/{reviewId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read, create: if true;
+      allow update, delete: if isAdmin();
     }
 
     // Services (read by public, create/update/delete only by admin)

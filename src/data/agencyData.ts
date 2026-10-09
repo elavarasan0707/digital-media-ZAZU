@@ -19,7 +19,7 @@ export const initialAgencyConfig: AgencyContactConfig = {
   whatsapp: '+91 9789504702',
   location: 'Tirumangalam, Tamil Nadu, India',
   tagline: 'WE DON’T JUST CREATE CONTENT. WE CREATE BUSINESS IMPACT.',
-  bookingUrl: 'https://calendly.com',
+  bookingUrl: 'https://calendly.com/elae2379/30min',
   instagram: 'https://www.instagram.com/zazudigitalmedia?utm_source=ig_web_button_share_sheet&stkn=ZDNlZDc0MzIxNw==',
   linkedin: 'https://www.linkedin.com/in/vijayakumar-s-2a48a8394/',
   aboutVijayakumar: `Vijayakumar is the creative professional behind Zazu Digital Media, focused on delivering creative and effective digital marketing solutions.

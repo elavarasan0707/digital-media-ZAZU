@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { AboutSection } from './components/AboutSection';
@@ -26,6 +26,7 @@ import { AgencyContactConfig, CaseStudyItem, TestimonialItem, ServiceItem } from
 import { fetchSiteConfig, fetchWorks, fetchReviews, fetchServices } from './firebase/firestoreService';
 
 function MainApp() {
+  const { isAdmin } = useAuth();
   // Live configuration & Firestore collections
   const [agencyConfig, setAgencyConfig] = useState<AgencyContactConfig>(initialAgencyConfig);
   const [worksList, setWorksList] = useState<CaseStudyItem[]>([]);
@@ -38,6 +39,23 @@ function MainApp() {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [preloadedService, setPreloadedService] = useState('Digital Marketing');
   const [dataVersion, setDataVersion] = useState(0);
+
+  // Automatically close Dashboard if user logs out or is not Admin
+  useEffect(() => {
+    if (!isAdmin && isDashboardOpen) {
+      setIsDashboardOpen(false);
+    }
+  }, [isAdmin, isDashboardOpen]);
+
+  // Automatically open Admin Dashboard when Admin logs in (e.g., admin / admin123)
+  useEffect(() => {
+    const handleAdminLoggedIn = () => {
+      setDashboardInitialTab('home');
+      setIsDashboardOpen(true);
+    };
+    window.addEventListener('zazu-admin-logged-in', handleAdminLoggedIn);
+    return () => window.removeEventListener('zazu-admin-logged-in', handleAdminLoggedIn);
+  }, []);
 
   const refreshData = async () => {
     setDataVersion((v) => v + 1);
@@ -69,6 +87,7 @@ function MainApp() {
   };
 
   const handleOpenDashboard = (tab: string = 'home') => {
+    if (!isAdmin) return;
     setDashboardInitialTab(tab);
     setIsDashboardOpen(true);
   };
@@ -130,6 +149,7 @@ function MainApp() {
           <TestimonialsSection
             reviewsList={reviewsList}
             onOpenDashboard={handleOpenDashboard}
+            onReviewAdded={refreshData}
           />
         </ScrollReveal>
 

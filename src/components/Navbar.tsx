@@ -69,14 +69,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             ))}
           </nav>
 
-          {/* Actions: Dashboard (Only when logged in/admin), Auth, Call CTA */}
+          {/* Actions: Dashboard (Strictly Admin Only), Auth, Call CTA */}
           <div className="hidden lg:flex items-center gap-2 xl:gap-3">
             
-            {/* Dashboard Button - Only visible for authenticated users / admin */}
-            {user && (
+            {/* Dashboard Button - STRICTLY visible ONLY for Admin */}
+            {isAdmin && (
               <button
                 onClick={() => onOpenDashboard('home')}
-                className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#141414] hover:bg-[#1f1f1f] border border-white/10 text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#141414] hover:bg-[#1f1f1f] border border-[#F5C542]/40 text-[#FFD966] flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <LayoutDashboard className="w-3.5 h-3.5 text-[#F5C542]" />
                 <span>Dashboard</span>
@@ -86,30 +86,37 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* User Auth State */}
             {user ? (
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onOpenDashboard('home')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer ${
-                    isAdmin
-                      ? 'bg-[#F5C542]/10 border-[#F5C542]/40 text-[#FFD966]'
-                      : 'bg-white/5 border-white/10 text-white'
-                  }`}
-                  title={user.email || 'User'}
-                >
-                  {isAdmin ? <ShieldCheck className="w-3.5 h-3.5 text-[#F5C542]" /> : <User className="w-3.5 h-3.5" />}
-                  <span className="max-w-[110px] truncate">{isAdmin ? 'Admin' : user.displayName || 'User'}</span>
-                </button>
+                {isAdmin ? (
+                  <button
+                    onClick={() => onOpenDashboard('home')}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border bg-[#F5C542]/10 border-[#F5C542]/40 text-[#FFD966] cursor-pointer"
+                    title={user.email || 'Admin'}
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#F5C542]" />
+                    <span className="max-w-[110px] truncate">Admin</span>
+                  </button>
+                ) : (
+                  <div
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border bg-white/5 border-white/10 text-white"
+                    title={user.email || 'User'}
+                  >
+                    <User className="w-3.5 h-3.5 text-[#F5C542]" />
+                    <span className="max-w-[110px] truncate">{user.displayName || 'User'}</span>
+                  </div>
+                )}
                 <button
                   onClick={logout}
-                  title="Sign Out"
-                  className="p-2 rounded-lg text-[#A0A0A0] hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                  title="Logout"
+                  className="px-3 py-2 rounded-lg text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Logout</span>
                 </button>
               </div>
             ) : (
               <button
                 onClick={() => openAuthModal('login')}
-                className="text-xs font-semibold px-3 py-2 rounded-lg border border-[#F5C542]/30 text-[#FFD966] hover:bg-[#F5C542]/10 transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="text-xs font-semibold px-3.5 py-2 rounded-lg border border-[#F5C542]/30 text-[#FFD966] hover:bg-[#F5C542]/10 transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Login</span>
@@ -127,30 +134,32 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex items-center gap-2 lg:hidden">
-            {user && (
+          {/* Mobile & Tablet Menu Controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden">
+            {isAdmin && (
               <button
                 onClick={() => onOpenDashboard('home')}
-                className="p-2 rounded-lg bg-[#141414] border border-white/10 text-[#F5C542]"
-                title="Dashboard"
+                className="px-2.5 py-1.5 rounded-lg bg-[#141414] border border-[#F5C542]/40 text-[#F5C542] text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                title="Admin Dashboard"
               >
-                <LayoutDashboard className="w-4 h-4" />
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Dashboard</span>
               </button>
             )}
             
             {user ? (
               <button
                 onClick={logout}
-                className="p-2 rounded-lg text-[#A0A0A0] hover:text-white"
-                title="Sign Out"
+                className="px-2.5 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 hover:text-white text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                title="Logout"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Logout</span>
               </button>
             ) : (
               <button
                 onClick={() => openAuthModal('login')}
-                className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-[#F5C542]/30 text-[#FFD966]"
+                className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-[#F5C542]/30 text-[#FFD966] cursor-pointer"
               >
                 Login
               </button>
@@ -158,7 +167,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-[#A0A0A0] hover:text-white hover:bg-white/5 transition-colors focus:outline-none"
+              className="p-2 rounded-lg text-[#A0A0A0] hover:text-white hover:bg-white/5 transition-colors focus:outline-none cursor-pointer"
               aria-label="Toggle Navigation Menu"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -168,43 +177,67 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile & Tablet Menu Overlay */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#0c0c0c] border-b border-[#222222] px-4 pt-3 pb-6 shadow-2xl animate-in slide-in-from-top-4 duration-200">
-          <nav className="flex flex-col gap-2 mb-4">
+        <div className="lg:hidden bg-[#0c0c0c]/98 backdrop-blur-xl border-b border-[#222222] px-4 pt-3 pb-6 shadow-2xl animate-in slide-in-from-top-4 duration-200">
+          <nav className="flex flex-col gap-1.5 mb-4">
             {navLinks.map((link) => (
               <a
                 key={link.label}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm font-medium text-[#D4D4D4] hover:text-[#F5C542] py-2 border-b border-white/5 flex items-center justify-between"
+                className="text-sm font-medium text-[#D4D4D4] hover:text-[#F5C542] py-2.5 border-b border-white/5 flex items-center justify-between"
               >
                 <span>{link.label}</span>
                 <ArrowUpRight className="w-3.5 h-3.5 text-[#A0A0A0]" />
               </a>
             ))}
 
-            {user && (
+            {isAdmin && (
               <button
                 onClick={() => { setMobileMenuOpen(false); onOpenDashboard('home'); }}
-                className="text-sm font-bold text-[#F5C542] py-2 flex items-center justify-between text-left"
+                className="text-sm font-bold text-[#F5C542] py-2.5 border-b border-white/5 flex items-center justify-between text-left cursor-pointer"
               >
-                <span>Agency Dashboard</span>
+                <span>Admin Dashboard</span>
                 <LayoutDashboard className="w-4 h-4 text-[#F5C542]" />
+              </button>
+            )}
+
+            {user ? (
+              <div className="pt-2 flex items-center justify-between border-b border-white/5 pb-2.5">
+                <div className="flex items-center gap-2 text-xs text-[#D4D4D4] truncate">
+                  {isAdmin ? <ShieldCheck className="w-4 h-4 text-[#F5C542] shrink-0" /> : <User className="w-4 h-4 text-[#F5C542] shrink-0" />}
+                  <span className="truncate">{user.email}</span>
+                </div>
+                <button
+                  onClick={() => { setMobileMenuOpen(false); logout(); }}
+                  className="px-3 py-1.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-300 text-xs font-semibold flex items-center gap-1.5 shrink-0 cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setMobileMenuOpen(false); openAuthModal('login'); }}
+                className="text-sm font-semibold text-[#FFD966] py-2.5 border-b border-white/5 flex items-center justify-between text-left cursor-pointer"
+              >
+                <span>Account Login</span>
+                <LogIn className="w-4 h-4 text-[#F5C542]" />
               </button>
             )}
           </nav>
 
-          <div className="grid grid-cols-2 gap-2 pt-2">
+          <div className="grid grid-cols-2 gap-2.5 pt-1">
             <button
               onClick={() => { setMobileMenuOpen(false); onOpenQuote(); }}
-              className="w-full py-2.5 rounded-lg text-xs font-semibold border border-white/10 text-white bg-black/40"
+              className="w-full py-2.5 rounded-lg text-xs font-semibold border border-white/10 text-white bg-black/40 cursor-pointer"
             >
               Get Free Quote
             </button>
             <button
               onClick={() => { setMobileMenuOpen(false); onOpenBooking(); }}
-              className="w-full py-2.5 rounded-lg text-xs font-bold bg-[#F5C542] text-[#080808]"
+              className="w-full py-2.5 rounded-lg text-xs font-bold bg-[#F5C542] text-[#080808] cursor-pointer"
             >
               Book Call
             </button>

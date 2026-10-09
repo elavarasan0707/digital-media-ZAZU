@@ -23,6 +23,19 @@ export const AuthModal: React.FC = () => {
   const [unauthorizedDomain, setUnauthorizedDomain] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Reset form fields cleanly whenever the modal is opened or mode changes
+  React.useEffect(() => {
+    if (isAuthModalOpen) {
+      setName('');
+      setEmail('');
+      setPassword('');
+      setShowPassword(false);
+      setErrorMsg('');
+      setSuccessMsg('');
+      setUnauthorizedDomain(null);
+    }
+  }, [isAuthModalOpen, authModalMode]);
+
   if (!isAuthModalOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,16 +80,16 @@ export const AuthModal: React.FC = () => {
         closeAuthModal();
       }, 600);
     } catch (err: any) {
-      console.error('Google sign in error:', err);
       const host = window.location.hostname;
       if (err.code === 'auth/unauthorized-domain' || (err.message && err.message.includes('unauthorized-domain'))) {
         setUnauthorizedDomain(host);
         setErrorMsg(`Unauthorized Domain: "${host}" is not added in Firebase Authorised domains yet.`);
       } else if (err.code === 'auth/popup-blocked') {
-        setErrorMsg('Popup was blocked by your browser. Please allow popups or test in a separate window.');
-      } else if (err.code === 'auth/popup-closed-by-user') {
-        setErrorMsg('Sign-in cancelled: The Google popup was closed before completion.');
+        setErrorMsg('Popup was blocked by your browser. Please allow popups or use Email & Password below.');
+      } else if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        setErrorMsg('Google sign-in window was closed. You can also sign in directly with Email & Password below.');
       } else {
+        console.warn('Google sign in notice:', err);
         setErrorMsg(err.message || 'Google sign-in failed. Please verify your connection.');
       }
     } finally {
@@ -222,61 +235,67 @@ export const AuthModal: React.FC = () => {
         )}
 
         {/* Email & Password Form */}
-        <form onSubmit={handleSubmit} className="space-y-3.5">
+        <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
           {authModalMode === 'signup' && (
             <div>
-              <label className="text-[11px] font-medium uppercase tracking-wider text-[#A0A0A0] block mb-1">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[#D4D4D4] block mb-1.5 select-none">
                 Full Name
               </label>
               <div className="relative">
                 <input
                   type="text"
+                  name="zazu_register_name"
+                  autoComplete="off"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter full name"
-                  className="w-full pl-9 pr-3 py-2.5 bg-black/60 border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-[#F5C542] transition-colors"
+                  className="w-full pl-10 pr-4 py-3 bg-[#090909] border border-white/10 rounded-xl text-white text-xs placeholder-[#666666] focus:outline-none focus:border-[#F5C542] transition-colors"
                 />
-                <User className="w-4 h-4 text-[#666666] absolute left-3 top-3" />
+                <User className="w-4 h-4 text-[#777777] absolute left-3.5 top-3" />
               </div>
             </div>
           )}
 
           <div>
-            <label className="text-[11px] font-medium uppercase tracking-wider text-[#A0A0A0] block mb-1">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-[#D4D4D4] block mb-1.5 select-none">
               {authModalMode === 'login' ? 'Username or Email' : 'Email Address'}
             </label>
             <div className="relative">
               <input
                 type={authModalMode === 'login' ? 'text' : 'email'}
+                name="zazu_portal_identifier"
+                autoComplete="off"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={authModalMode === 'login' ? 'Enter username or email' : 'Enter email address'}
-                className="w-full pl-9 pr-3 py-2.5 bg-black/60 border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-[#F5C542] transition-colors"
+                className="w-full pl-10 pr-4 py-3 bg-[#090909] border border-white/10 rounded-xl text-white text-xs placeholder-[#666666] focus:outline-none focus:border-[#F5C542] transition-colors"
               />
-              <Mail className="w-4 h-4 text-[#666666] absolute left-3 top-3" />
+              <Mail className="w-4 h-4 text-[#777777] absolute left-3.5 top-3" />
             </div>
           </div>
 
           <div>
-            <label className="text-[11px] font-medium uppercase tracking-wider text-[#A0A0A0] block mb-1">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-[#D4D4D4] block mb-1.5 select-none">
               Password
             </label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
+                name="zazu_portal_secret"
+                autoComplete="new-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password"
-                className="w-full pl-9 pr-10 py-2.5 bg-black/60 border border-white/10 rounded-xl text-white text-xs focus:outline-none focus:border-[#F5C542] transition-colors"
+                className="w-full pl-10 pr-10 py-3 bg-[#090909] border border-white/10 rounded-xl text-white text-xs placeholder-[#666666] focus:outline-none focus:border-[#F5C542] transition-colors"
               />
-              <Lock className="w-4 h-4 text-[#666666] absolute left-3 top-3" />
+              <Lock className="w-4 h-4 text-[#777777] absolute left-3.5 top-3" />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-2.5 text-[#666666] hover:text-white cursor-pointer"
+                className="absolute right-3.5 top-3 text-[#777777] hover:text-white cursor-pointer"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -292,7 +311,7 @@ export const AuthModal: React.FC = () => {
               <span className="animate-pulse">Processing...</span>
             ) : (
               <>
-                <span>{authModalMode === 'login' ? 'Login' : 'Register Account'}</span>
+                <span>{authModalMode === 'login' ? 'Sign In' : 'Create Account'}</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
