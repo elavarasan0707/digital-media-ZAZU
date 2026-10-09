@@ -61,6 +61,7 @@ export interface AgencyContactConfig {
   instagram?: string;
   linkedin?: string;
   aboutVijayakumar?: string;
+  aboutImageUrl?: string;
 }
 
 export interface ClientInquiry {

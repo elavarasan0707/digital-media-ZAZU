@@ -26,7 +26,7 @@ import { AgencyContactConfig, CaseStudyItem, TestimonialItem, ServiceItem } from
 import { fetchSiteConfig, fetchWorks, fetchReviews, fetchServices } from './firebase/firestoreService';
 
 function MainApp() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   // Live configuration & Firestore collections
   const [agencyConfig, setAgencyConfig] = useState<AgencyContactConfig>(initialAgencyConfig);
   const [worksList, setWorksList] = useState<CaseStudyItem[]>([]);
@@ -122,6 +122,9 @@ function MainApp() {
         <ScrollReveal direction="up" delay={50}>
           <AboutSection
             agencyConfig={agencyConfig}
+            onUpdateConfig={setAgencyConfig}
+            isAdmin={isAdmin}
+            userUid={user?.uid}
             onOpenBooking={() => scrollToSection('booking')}
           />
         </ScrollReveal>

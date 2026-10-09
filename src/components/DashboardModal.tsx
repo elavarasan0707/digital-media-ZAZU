@@ -99,6 +99,7 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
   const [editingReview, setEditingReview] = useState<Partial<TestimonialItem> | null>(null);
   const [editingService, setEditingService] = useState<Partial<ServiceItem> | null>(null);
   const [editingAboutText, setEditingAboutText] = useState('');
+  const [editingAboutImage, setEditingAboutImage] = useState('');
 
   const loadAllData = async () => {
     setLoading(true);
@@ -112,6 +113,7 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
       ]);
       setSiteConfig(cfg);
       setEditingAboutText(cfg.aboutVijayakumar || '');
+      setEditingAboutImage(cfg.aboutImageUrl || '');
       setWorks(w);
       setReviews(r);
       setServices(s);
@@ -252,14 +254,30 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
   const handleSaveAboutContext = async () => {
     if (!siteConfig) return;
     try {
-      const updated = { ...siteConfig, aboutVijayakumar: editingAboutText };
+      const updated = {
+        ...siteConfig,
+        aboutVijayakumar: editingAboutText,
+        aboutImageUrl: editingAboutImage || siteConfig.aboutImageUrl
+      };
       await saveSiteConfig(updated, user?.email);
       setSiteConfig(updated);
-      showFeedback('success', 'About Vijayakumar bio saved to live site!');
+      showFeedback('success', 'About Vijayakumar profile & portrait saved to live site!');
       onDataChange?.();
     } catch (err: any) {
       showFeedback('error', err.message);
     }
+  };
+
+  const handleAboutImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setEditingAboutImage(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSaveContactConfig = async (e: React.FormEvent) => {
@@ -1055,7 +1073,7 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                   <div>
                     <h3 className="text-xl font-display font-bold text-white">About Vijayakumar</h3>
                     <p className="text-xs text-[#A0A0A0]">
-                      The creative professional behind ZAZU Digital Media.
+                      Manage founder portrait frame and concise executive profile.
                     </p>
                   </div>
                   <button
@@ -1068,44 +1086,100 @@ export const DashboardModal: React.FC<DashboardModalProps> = ({
                   </button>
                 </div>
 
-                {/* Editor or Content Display */}
-                <div className="p-5 rounded-2xl bg-[#111111] border border-white/10 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold uppercase tracking-wider text-white">
-                      Official Biography & Agency Context
+                {/* Portrait & Bio Editor */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-5 rounded-2xl bg-[#111111] border border-white/10">
+                  {/* Left: Portrait Frame Preview & Upload */}
+                  <div className="md:col-span-4 space-y-3">
+                    <label className="text-xs font-bold uppercase tracking-wider text-white block">
+                      Founder Portrait Frame
                     </label>
-                    <span className="text-[10px] font-mono text-[#FFD966]">
-                      Editable Live
-                    </span>
+                    <div className="relative aspect-[3/4] w-full max-w-[220px] rounded-xl overflow-hidden bg-black border border-[#F5C542]/40">
+                      {editingAboutImage ? (
+                        <img
+                          src={editingAboutImage}
+                          alt="Vijayakumar S"
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover object-top"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs text-[#777] text-center p-4">
+                          No Portrait Uploaded Yet
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <label className="flex-1 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-white font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors">
+                          <span>Upload Photo</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAboutImageUpload}
+                            className="hidden"
+                          />
+                        </label>
+                        {editingAboutImage && (
+                          <button
+                            type="button"
+                            onClick={() => setEditingAboutImage('')}
+                            className="px-3 py-2 rounded-lg bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-xs text-red-300 font-medium transition-colors cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Or paste image URL..."
+                        value={editingAboutImage}
+                        onChange={(e) => setEditingAboutImage(e.target.value)}
+                        className="w-full p-2 rounded-lg bg-black/80 border border-white/10 text-[11px] text-white focus:outline-none focus:border-[#F5C542]"
+                      />
+                    </div>
                   </div>
 
-                  <textarea
-                    rows={16}
-                    value={editingAboutText}
-                    onChange={(e) => setEditingAboutText(e.target.value)}
-                    className="w-full p-4 rounded-xl bg-black/80 border border-white/10 text-white text-xs font-sans leading-relaxed focus:outline-none focus:border-[#F5C542]"
-                  />
+                  {/* Right: Concise Context Editor */}
+                  <div className="md:col-span-8 space-y-4 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold uppercase tracking-wider text-white">
+                          Key Biography Summary
+                        </label>
+                        <span className="text-[10px] font-mono text-[#FFD966]">
+                          Editable Live
+                        </span>
+                      </div>
 
-                  {/* Social and live link buttons */}
-                  <div className="pt-2 flex flex-wrap gap-3">
-                    <a
-                      href="https://www.instagram.com/zazudigitalmedia?utm_source=ig_web_button_share_sheet&stkn=ZDNlZDc0MzIxNw=="
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3.5 py-2 rounded-lg bg-[#1a1a1a] hover:bg-[#252525] border border-white/10 text-xs text-white flex items-center gap-2"
-                    >
-                      <span>Instagram Profile</span>
-                      <ExternalLink className="w-3.5 h-3.5 text-[#F5C542]" />
-                    </a>
-                    <a
-                      href="https://www.linkedin.com/in/vijayakumar-s-2a48a8394/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3.5 py-2 rounded-lg bg-[#1a1a1a] hover:bg-[#252525] border border-white/10 text-xs text-white flex items-center gap-2"
-                    >
-                      <span>LinkedIn Profile</span>
-                      <ExternalLink className="w-3.5 h-3.5 text-[#0A66C2]" />
-                    </a>
+                      <textarea
+                        rows={7}
+                        value={editingAboutText}
+                        onChange={(e) => setEditingAboutText(e.target.value)}
+                        placeholder="Enter concise executive summary..."
+                        className="w-full p-4 rounded-xl bg-black/80 border border-white/10 text-white text-xs font-sans leading-relaxed focus:outline-none focus:border-[#F5C542]"
+                      />
+                    </div>
+
+                    {/* Social and live link buttons */}
+                    <div className="pt-2 flex flex-wrap gap-3 border-t border-white/5">
+                      <a
+                        href="https://www.instagram.com/zazudigitalmedia?utm_source=ig_web_button_share_sheet&stkn=ZDNlZDc0MzIxNw=="
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-2 rounded-lg bg-[#1a1a1a] hover:bg-[#252525] border border-white/10 text-xs text-white flex items-center gap-2"
+                      >
+                        <span>Instagram Profile</span>
+                        <ExternalLink className="w-3.5 h-3.5 text-[#F5C542]" />
+                      </a>
+                      <a
+                        href="https://www.linkedin.com/in/vijayakumar-s-2a48a8394/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-2 rounded-lg bg-[#1a1a1a] hover:bg-[#252525] border border-white/10 text-xs text-white flex items-center gap-2"
+                      >
+                        <span>LinkedIn Profile</span>
+                        <ExternalLink className="w-3.5 h-3.5 text-[#0A66C2]" />
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>

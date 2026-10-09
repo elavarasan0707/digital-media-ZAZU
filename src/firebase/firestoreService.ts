@@ -35,10 +35,20 @@ const withTimeout = <T>(promise: Promise<T>, ms = 2500): Promise<T> => {
 export const fetchSiteConfig = async (): Promise<AgencyContactConfig> => {
   const DEFAULT_CALENDLY = 'https://calendly.com/elae2379/30min';
   const normalizeConfig = (cfg: AgencyContactConfig): AgencyContactConfig => {
-    if (!cfg.bookingUrl || cfg.bookingUrl === 'https://calendly.com' || cfg.bookingUrl === 'https://calendly.com/') {
-      return { ...cfg, bookingUrl: DEFAULT_CALENDLY };
+    const next = { ...cfg };
+    if (!next.bookingUrl || next.bookingUrl === 'https://calendly.com' || next.bookingUrl === 'https://calendly.com/') {
+      next.bookingUrl = DEFAULT_CALENDLY;
     }
-    return cfg;
+    if (next.aboutImageUrl && next.aboutImageUrl.includes('vijayakumar_founder_portrait')) {
+      next.aboutImageUrl = '';
+    }
+    if (
+      next.aboutVijayakumar &&
+      next.aboutVijayakumar.includes('He has a strong interest in digital media, content creation, and brand promotion.')
+    ) {
+      next.aboutVijayakumar = initialAgencyConfig.aboutVijayakumar;
+    }
+    return next;
   };
 
   const saved = localStorage.getItem('zazu_agency_config');

@@ -22,23 +22,10 @@ export const initialAgencyConfig: AgencyContactConfig = {
   bookingUrl: 'https://calendly.com/elae2379/30min',
   instagram: 'https://www.instagram.com/zazudigitalmedia?utm_source=ig_web_button_share_sheet&stkn=ZDNlZDc0MzIxNw==',
   linkedin: 'https://www.linkedin.com/in/vijayakumar-s-2a48a8394/',
-  aboutVijayakumar: `Vijayakumar is the creative professional behind Zazu Digital Media, focused on delivering creative and effective digital marketing solutions.
-He has a strong interest in digital media, content creation, and brand promotion.
-He creates engaging content based on the needs of different brands and businesses.
-His work includes creative content creation and professional video creation.
-He also specializes in video editing to make content more attractive and engaging.
-Along with content creation, he handles social media marketing and promotions.
-He works on digital marketing strategies to help businesses grow their online presence.
-He also focuses on Search Engine Marketing (SEM) and online advertising.
-His approach combines creativity, marketing knowledge, and audience-focused strategies.
-He has worked on multiple projects across different digital marketing requirements.
-Each project is handled with attention to quality, creativity, and business goals.
-From developing an idea to creating and promoting the final content, he manages different stages of the digital marketing process.
-Through Zazu Digital Media, he aims to provide creative digital solutions that help brands communicate effectively with their target audience.
-His goal is to create meaningful content that connects brands with people.
-He continuously explores new creative ideas and digital marketing trends.
-With creativity and practical experience, he turns ideas into digital experiences.
-Zazu Digital Media – Creative Ideas, Digital Content & Smart Marketing.`
+  aboutImageUrl: '',
+  aboutVijayakumar: `Vijayakumar S is the Founder & Creative Strategist behind Zazu Digital Media, delivering result-driven digital marketing and brand storytelling.
+
+Specializing in Creative Content Production, Professional Video Editing, Social Media Growth, and Search Engine Marketing (SEM), he manages every stage from initial concept to high-converting campaign execution.`
 };
 
 export const servicesData: ServiceItem[] = [
