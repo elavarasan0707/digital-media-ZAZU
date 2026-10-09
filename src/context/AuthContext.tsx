@@ -220,6 +220,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setUser(null);
     localStorage.removeItem('zazu_auth_user');
+    window.dispatchEvent(new CustomEvent('zazu-user-logged-out'));
     setAuthModalMode('login');
     setIsAuthModalOpen(true);
   };

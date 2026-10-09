@@ -22,6 +22,15 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
   const [submitted, setSubmitted] = useState(false);
   const [contactInfo, setContactInfo] = useState({ name: '', email: '', phone: '' });
 
+  React.useEffect(() => {
+    const handleLogoutReset = () => {
+      setContactInfo({ name: '', email: '', phone: '' });
+      setSubmitted(false);
+    };
+    window.addEventListener('zazu-user-logged-out', handleLogoutReset);
+    return () => window.removeEventListener('zazu-user-logged-out', handleLogoutReset);
+  }, []);
+
   if (!isOpen) return null;
 
   const toggleService = (title: string) => {

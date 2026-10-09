@@ -29,7 +29,28 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submittedName, setSubmittedName] = useState('');
   const [whatsappDirectUrl, setWhatsappDirectUrl] = useState('');
+
+  // Clear entered client inquiry details when user logs out
+  React.useEffect(() => {
+    const handleLogoutReset = () => {
+      setFormData({
+        name: '',
+        businessName: '',
+        email: '',
+        phone: '',
+        serviceRequired: 'Digital Marketing',
+        monthlyBudget: '₹25,000 - ₹75,000 / mo',
+        message: ''
+      });
+      setIsSubmitted(false);
+      setSubmittedName('');
+      setWhatsappDirectUrl('');
+    };
+    window.addEventListener('zazu-user-logged-out', handleLogoutReset);
+    return () => window.removeEventListener('zazu-user-logged-out', handleLogoutReset);
+  }, []);
 
   // Sync if preloaded service changes
   React.useEffect(() => {
@@ -78,6 +99,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
 
     const waUrl = `https://wa.me/${targetPhoneNumber}?text=${encodeURIComponent(waText)}`;
     setWhatsappDirectUrl(waUrl);
+    setSubmittedName(formData.name);
 
     // Save inquiry to Firestore in background without delaying user
     submitClientInquiry({
@@ -93,6 +115,17 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
       status: 'new'
     }).catch((err) => {
       console.warn('Inquiry saved locally:', err);
+    });
+
+    // Clear input fields immediately so previous client details are not left in form state
+    setFormData({
+      name: '',
+      businessName: '',
+      email: '',
+      phone: '',
+      serviceRequired: 'Digital Marketing',
+      monthlyBudget: '₹25,000 - ₹75,000 / mo',
+      message: ''
     });
 
     // Reliable WhatsApp opening directly within user gesture:
@@ -269,7 +302,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                     Inquiry Dispatched!
                   </h3>
                   <p className="text-sm text-[#A0A0A0] max-w-md mx-auto leading-relaxed">
-                    Thank you, <span className="text-white font-semibold">{formData.name}</span>. Your inquiry has been recorded and directed to <strong className="text-white">+91 9789504702</strong>.
+                    Thank you, <span className="text-white font-semibold">{submittedName}</span>. Your inquiry has been recorded and directed to <strong className="text-white">+91 9789504702</strong>.
                   </p>
                   
                   <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -285,6 +318,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                     <button
                       onClick={() => {
                         setIsSubmitted(false);
+                        setSubmittedName('');
                         setFormData({
                           name: '',
                           businessName: '',
@@ -305,7 +339,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+                <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4 text-xs">
                   
                   {/* Row 1: Name & Business */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

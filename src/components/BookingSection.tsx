@@ -20,8 +20,27 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
     phone: '',
     notes: ''
   });
+  const [lastBookedSummary, setLastBookedSummary] = useState({
+    name: '',
+    email: '',
+    dateLabel: '',
+    time: '',
+    topic: '',
+    waUrl: ''
+  });
   const [isBooked, setIsBooked] = useState(false);
   const [bookedList, setBookedList] = useState<BookingRecord[]>([]);
+
+  // Clear any entered client details immediately on user logout so previous client data is never exposed
+  useEffect(() => {
+    const handleClearClientDetails = () => {
+      setBookingForm({ name: '', email: '', phone: '', notes: '' });
+      setLastBookedSummary({ name: '', email: '', dateLabel: '', time: '', topic: '', waUrl: '' });
+      setIsBooked(false);
+    };
+    window.addEventListener('zazu-user-logged-out', handleClearClientDetails);
+    return () => window.removeEventListener('zazu-user-logged-out', handleClearClientDetails);
+  }, []);
 
   // Load booked slots from Firestore & cache with real-time updates
   useEffect(() => {
@@ -151,17 +170,39 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
       return;
     }
 
+    const waUrl = getBookingWhatsAppUrl();
+    const submittedName = bookingForm.name;
+    const submittedEmail = bookingForm.email;
+    const submittedPhone = bookingForm.phone || 'N/A';
+    const submittedNotes = bookingForm.notes || '';
+
+    setLastBookedSummary({
+      name: submittedName,
+      email: submittedEmail,
+      dateLabel: currentDay.label,
+      time: selectedTime,
+      topic: selectedTopic,
+      waUrl
+    });
+
+    // Clear input fields immediately so previous client details are never shown on the form
+    setBookingForm({
+      name: '',
+      email: '',
+      phone: '',
+      notes: ''
+    });
     setIsBooked(true);
 
     const newBookingData = {
       slotKey,
       dateLabel: currentDay.label,
       time: selectedTime,
-      name: bookingForm.name,
-      email: bookingForm.email,
-      phone: bookingForm.phone || 'N/A',
+      name: submittedName,
+      email: submittedEmail,
+      phone: submittedPhone,
       topic: selectedTopic,
-      notes: bookingForm.notes || ''
+      notes: submittedNotes
     };
 
     // 1. Lock slot permanently in Database (Firestore bookings collection)
@@ -173,12 +214,12 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
 
     // 2. Also save to Inquiries collection for agency records
     submitClientInquiry({
-      name: bookingForm.name,
-      email: bookingForm.email,
-      phone: bookingForm.phone || 'N/A',
+      name: submittedName,
+      email: submittedEmail,
+      phone: submittedPhone,
       serviceRequired: `Consultation: ${selectedTopic} (${currentDay.label} at ${selectedTime})`,
-      monthlyBudget: bookingForm.notes || 'Consultation Session',
-      message: `30-Minute Consultation Request: ${currentDay.label} at ${selectedTime}. Focus: ${selectedTopic}. Current Budget/Goal: ${bookingForm.notes || 'N/A'}`,
+      monthlyBudget: submittedNotes || 'Consultation Session',
+      message: `30-Minute Consultation Request: ${currentDay.label} at ${selectedTime}. Focus: ${selectedTopic}. Current Budget/Goal: ${submittedNotes || 'N/A'}`,
       source: 'booking',
       whatsappSent: true,
       status: 'new'
@@ -187,7 +228,6 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
     });
 
     // 3. Route directly to WhatsApp (+91 9789504702)
-    const waUrl = getBookingWhatsAppUrl();
     try {
       const win = window.open(waUrl, '_blank', 'noopener,noreferrer');
       if (!win || win.closed || typeof win.closed === 'undefined') {
@@ -263,16 +303,16 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
                 Consultation Request Reserved!
               </h3>
               <p className="text-sm text-[#A0A0A0] leading-relaxed">
-                Thank you, <span className="text-white font-semibold">{bookingForm.name}</span>. We have reserved your requested window for <span className="text-[#FFD966] font-semibold">{days[selectedDateIndex].label} at {selectedTime}</span>.
+                Thank you, <span className="text-white font-semibold">{lastBookedSummary.name}</span>. We have reserved your requested window for <span className="text-[#FFD966] font-semibold">{lastBookedSummary.dateLabel} at {lastBookedSummary.time}</span>.
               </p>
               <div className="p-4 rounded-xl bg-black/40 border border-white/5 text-xs text-[#D4D4D4] text-left space-y-1">
-                <div><strong className="text-white">Topic:</strong> {selectedTopic}</div>
-                <div><strong className="text-white">Email:</strong> {bookingForm.email}</div>
+                <div><strong className="text-white">Topic:</strong> {lastBookedSummary.topic}</div>
+                <div><strong className="text-white">Email:</strong> {lastBookedSummary.email}</div>
                 <div><strong className="text-white">Format:</strong> 30-Minute Private Google Meet / Zoom Video Call</div>
               </div>
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <a
-                  href={getBookingWhatsAppUrl()}
+                  href={lastBookedSummary.waUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-[#080808] font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#25D366]/20 transition-all"
@@ -281,7 +321,11 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
                   <span>Confirm on WhatsApp</span>
                 </a>
                 <button
-                  onClick={() => setIsBooked(false)}
+                  onClick={() => {
+                    setBookingForm({ name: '', email: '', phone: '', notes: '' });
+                    setLastBookedSummary({ name: '', email: '', dateLabel: '', time: '', topic: '', waUrl: '' });
+                    setIsBooked(false);
+                  }}
                   className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#222222] hover:bg-[#333333] text-xs font-semibold text-white transition-colors"
                 >
                   Schedule Another Slot
@@ -290,7 +334,7 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
             </div>
           ) : (
             /* Booking Form Flow */
-            <form onSubmit={handleConfirmBooking} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <form onSubmit={handleConfirmBooking} autoComplete="off" className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               
               {/* Left Column: Date & Time Selection (7 cols) */}
               <div className="lg:col-span-7 space-y-6">
@@ -424,6 +468,7 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
                   <input
                     type="text"
                     required
+                    autoComplete="off"
                     placeholder="e.g. Sarah Mitchell"
                     value={bookingForm.name}
                     onChange={(e) => setBookingForm({ ...bookingForm, name: e.target.value })}
@@ -436,6 +481,7 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
                   <input
                     type="email"
                     required
+                    autoComplete="off"
                     placeholder="sarah@company.com"
                     value={bookingForm.email}
                     onChange={(e) => setBookingForm({ ...bookingForm, email: e.target.value })}
@@ -448,6 +494,7 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
                   <input
                     type="tel"
                     required
+                    autoComplete="off"
                     placeholder="+91 9789504702"
                     value={bookingForm.phone}
                     onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })}
@@ -459,6 +506,7 @@ export const BookingSection: React.FC<BookingSectionProps> = ({ agencyConfig }) 
                   <label className="text-[11px] text-[#A0A0A0] block mb-1">Current Monthly Budget or Goal</label>
                   <input
                     type="text"
+                    autoComplete="off"
                     placeholder="e.g. ₹35,000 - ₹1,50,000 / mo"
                     value={bookingForm.notes}
                     onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
